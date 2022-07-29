@@ -1,12 +1,9 @@
 <script>
 	// @ts-nocheck
 
-	import Button from '$lib/button.svelte';
-	import About from './about.svelte';
-	import restart from '../lib/icons/rotate-right-solid.svg';
 	import words from './words.js';
 	import Icon from 'svelte-awesome';
-	import {refresh} from 'svelte-awesome/icons'
+	import rotateRight from 'svelte-awesome/icons/rotateRight';
 
 	let main = [];
 	let index = 0;
@@ -22,21 +19,44 @@
 	let updatedWords = words.map((item) => {
 		return [...item, ' '];
 	});
-	console.log(updatedWords);
 
-	//
+	// mapping all the words inside a single array with each
+	// letter and space as single characters
 	updatedWords.map((word, idx) => {
 		word.map((letter, i) => {
 			main.push(letter);
 		});
 	});
 
+	// checks if the entered character is a character or not
+	function isCharALetter(char) {
+		switch (char) {
+			case 'Tab':
+				return false;
+			case 'Enter':
+				return false;
+			case 'Shift':
+				return false;
+			case 'Ctrl':
+				return false;
+			case 'Alt':
+				return false;
+			default:
+				return true;
+		}
+	}
+
+	// if a key is entered it needs to go through all the checks
+	// before doing anything
 	function handleKeydown(event) {
-		if (!timerRunning) {
+
+		// check these before starting the timer
+		if (!timerRunning && isCharALetter(event.key) && !isCompleted) {
 			timerRunning = true;
 			startTimer();
 		}
 
+		// checking if the entered key is same as where the blink is
 		if (event.key === main[index]) {
 			console.log(main[index]);
 			index++;
@@ -48,6 +68,7 @@
 		} else {
 			console.log(event.key);
 		}
+
 
 		if (!isCompleted && index === main.length - 1) {
 			isCompleted = true;
@@ -68,6 +89,11 @@
 	<div>
 		<span class:invisible={!timerRunning} class="timer">{timer}</span>
 	</div>
+	<div>
+		<span class:speed={isCompleted}
+			>{isCompleted ? `${Math.trunc(main.length / (timer / 12))} WPM` : ''}</span
+		>
+	</div>
 	<div class="words">
 		{#each main as letter, i}
 			{#if i === index}
@@ -81,19 +107,13 @@
 		{/each}
 	</div>
 
-	<div class="completed success">
-		<h2>{isCompleted ? 'Completed' : ''}</h2>
+	<div>
+		<button class="refresh" onclick="location.reload()">
+			<Icon data={rotateRight} scale="1.5" style="color:#62cfe6" />
+		</button>
 	</div>
 
-	<div>
-		<span class:speed={isCompleted}
-			>{isCompleted ? `${Math.trunc(main.length / (timer / 12))} WPM` : ''}</span
-		>
-	</div>
-
-	<div>
-		<Icon data={refresh} />
-	</div>
+	<span class:info={isCompleted} class="invisible">Tab + Enter to restart</span>
 </div>
 
 <style>
@@ -116,17 +136,26 @@
 		word-wrap: break-word;
 		flex-wrap: wrap;
 		font-family: Georgia, 'Times New Roman', Times, serif;
+		color: #212b43;
 	}
 
 	.selected {
 		color: #62cfe6;
 	}
 
-	.success {
-		position: fixed;
-		bottom: 50px;
-		justify-content: center;
-		color: #62cfe6;
+	.refresh {
+		margin-top: 30px;
+		border: none;
+		background-color: white;
+		padding: 5px;
+		cursor: pointer;
+	}
+
+	.refresh:focus-visible {
+		outline: 1px solid #212b43;
+		background-color: #212b43;
+		border-radius: 4px;
+		padding-bottom: 0px;
 	}
 
 	p {
@@ -145,7 +174,7 @@
 	#blink {
 		position: relative;
 		animation: blink 2s infinite;
-		height: 32px;
+		height: 35px;
 		width: 2.5px;
 		background-color: #62cfe6;
 	}
@@ -178,8 +207,13 @@
 	}
 
 	.timer {
-		font-size: 60px;
+		font-size: 100px;
 		line-height: 60px;
-		color: #62cfe6;
+		color: #212b43;
+	}
+
+	.info{
+		font-size: 13px;
+		visibility: visible;
 	}
 </style>

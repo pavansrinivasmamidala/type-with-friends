@@ -1,18 +1,22 @@
 <script>
-	import Header from '../lib/header/header.svelte'
+	import Header from '$lib/header/header.svelte';
+	import Footer from '$lib/footer/footer.svelte';
 </script>
 
 <header>
-<Header />
+	<Header />
 </header>
 
-
-<main >
+<main>
 	<slot />
 </main>
 
+<footer>
+	<Footer />
+</footer>
+
 <style>
-	main{
+	main {
 		max-width: 80vw;
 		margin: auto;
 		height: 80vh;
