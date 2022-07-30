@@ -21,4 +21,13 @@
 		margin: auto;
 		height: 80vh;
 	}
+
+
+	:global(body.dark-mode)  {
+		color: white;
+	}
+
+	:global(body.dark-mode) {
+		background-color: #212b43;
+	}
 </style>

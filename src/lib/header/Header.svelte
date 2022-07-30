@@ -60,10 +60,25 @@
         font-weight: 600;
         font-size: 24px;
         border-radius: 10px;
+        opacity: 0.6;
     }
 
     .btn:hover{
-        background-color: gainsboro;
+        opacity: 1.5;
     }
+
+    :global(body.dark-mode) .heading{
+		color: white;
+	}
+    :global(body.dark-mode) .btn  {
+		color: white;
+        background-color: #212b43;
+        border: #62cfe6 1px solid;
+        opacity: 1;
+	}
+
+	:global(body.dark-mode) .container {
+		background-color: #212b43;
+	}
 
 </style>

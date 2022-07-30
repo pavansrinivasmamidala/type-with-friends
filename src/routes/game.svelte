@@ -160,16 +160,26 @@
 
 	p {
 		font-size: large;
-		color: black;
+		color: #212b43;
 		margin: 11px 0px;
 	}
 
 	:global(body.dark-mode) p {
 		color: white;
 	}
+	:global(body.dark-mode) .timer  {
+		color: white;
+	}
 
+	:global(body.dark-mode) .refresh  {
+		background-color: #212b43;
+	}
+
+	:global(body.dark-mode) .refresh:focus-visible  {
+		border: #62cfe6;
+	}
 	:global(body.dark-mode) .container {
-		background-color: black;
+		background-color: #212b43;
 	}
 	#blink {
 		position: relative;
@@ -215,5 +225,6 @@
 	.info{
 		font-size: 13px;
 		visibility: visible;
+		margin-top: 20px;
 	}
 </style>
