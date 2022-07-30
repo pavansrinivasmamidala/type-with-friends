@@ -28,6 +28,6 @@
 	}
 
 	:global(body.dark-mode) {
-		background-color: #212b43;
+		background-color: var(--darkBackground);
 	}
 </style>

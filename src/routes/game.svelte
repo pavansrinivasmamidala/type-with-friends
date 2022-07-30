@@ -1,7 +1,7 @@
 <script>
-	// @ts-nocheck
+// @ts-nocheck
 
-	import words from './words.js';
+import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
 
@@ -109,7 +109,7 @@
 
 	<div>
 		<button class="refresh" onclick="location.reload()">
-			<Icon data={rotateRight} scale="1.5" style="color:#62cfe6" />
+			<Icon data={rotateRight} scale="1.5" style="color:var(--lightTextColor)" />
 		</button>
 	</div>
 
@@ -136,11 +136,11 @@
 		word-wrap: break-word;
 		flex-wrap: wrap;
 		font-family: Georgia, 'Times New Roman', Times, serif;
-		color: #212b43;
+		color: var(--darkBackground);
 	}
 
 	.selected {
-		color: #62cfe6;
+		color: var(--lightTextColor);
 	}
 
 	.refresh {
@@ -152,41 +152,48 @@
 	}
 
 	.refresh:focus-visible {
-		outline: 1px solid #212b43;
-		background-color: #212b43;
+		outline: 1px solid var(--darkBackground);
+		background-color: var(--darkBackground);
 		border-radius: 4px;
 		padding-bottom: 0px;
 	}
 
 	p {
 		font-size: large;
-		color: #212b43;
+		color: var(--darkBackground);
 		margin: 11px 0px;
 	}
 
 	:global(body.dark-mode) p {
 		color: white;
 	}
+
+	:global(body.dark-mode) .selected {
+		color: var(--lightTextColor);
+	}
 	:global(body.dark-mode) .timer  {
 		color: white;
 	}
 
 	:global(body.dark-mode) .refresh  {
-		background-color: #212b43;
+		background-color: var(--darkBackground);
 	}
 
 	:global(body.dark-mode) .refresh:focus-visible  {
-		border: #62cfe6;
+		border: var(--lightTextColor);
 	}
 	:global(body.dark-mode) .container {
-		background-color: #212b43;
+		background-color: var(--darkBackground);
 	}
 	#blink {
 		position: relative;
-		animation: blink 2s infinite;
+		animation: blinkLight 1s infinite;
 		height: 35px;
 		width: 2.5px;
-		background-color: #62cfe6;
+		background-color: var(--lightTextColor);
+	}
+	:global(body.dark-mode) #blink {
+		animation: blinkDark 1s infinite;
 	}
 
 	.letter {
@@ -196,15 +203,24 @@
 			'Open Sans', 'Helvetica Neue', sans-serif;
 	}
 
-	@keyframes blink {
+	@keyframes blinkLight {
 		50% {
 			background-color: white;
 		}
 		100% {
-			background-color: #62cfe6;
+			background-color: var(--lightTextColor);
 		}
-	}
+	}	
 
+	@keyframes blinkDark {
+		50% {
+			background-color: var(--darkBackground);
+		}
+		100% {
+			background-color: var(--lightTextColor);
+		}
+	}	
+	
 	.invisible {
 		visibility: hidden;
 	}
@@ -213,13 +229,13 @@
 		font-size: 30px;
 		font-weight: 700;
 		line-height: large;
-		color: #62cfe6;
+		color: var(--lightTextColor);
 	}
 
 	.timer {
 		font-size: 100px;
 		line-height: 60px;
-		color: #212b43;
+		color: var(--darkBackground);
 	}
 
 	.info{
