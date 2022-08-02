@@ -1,7 +1,7 @@
 <script>
-// @ts-nocheck
+	// @ts-nocheck
 
-import words from './words.js';
+	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
 
@@ -49,7 +49,6 @@ import words from './words.js';
 	// if a key is entered it needs to go through all the checks
 	// before doing anything
 	function handleKeydown(event) {
-
 		// check these before starting the timer
 		if (!timerRunning && isCharALetter(event.key) && !isCompleted) {
 			timerRunning = true;
@@ -69,13 +68,14 @@ import words from './words.js';
 			console.log(event.key);
 		}
 
-
+		// if the test is completed it will change the below values
 		if (!isCompleted && index === main.length - 1) {
 			isCompleted = true;
 			timerRunning = false;
 		}
 	}
 
+	// function to start the timer and logic for timer
 	function startTimer() {
 		setInterval(function () {
 			if (timerRunning) timer++;
@@ -83,17 +83,25 @@ import words from './words.js';
 	}
 </script>
 
+<!-- svelte feature a window vide selector which calls the 
+	function when a key is pressed in any part of the window-->
 <svelte:window on:keydown={handleKeydown} />
 
 <div class="container">
+
+	<!-- show timer after the test starts-->
 	<div>
 		<span class:invisible={!timerRunning} class="timer">{timer}</span>
 	</div>
+
+	<!-- show the speed after the test completed -->
 	<div>
 		<span class:speed={isCompleted}
-			>{isCompleted ? `${Math.trunc(main.length / (timer / 12))} WPM` : ''}</span
+			>{isCompleted ? `${Math.trunc(main.length / (timer + 1 / 12))} WPM` : ''}</span
 		>
 	</div>
+
+	<!-- div which displays the letters -->
 	<div class="words">
 		{#each main as letter, i}
 			{#if i === index}
@@ -149,6 +157,7 @@ import words from './words.js';
 		background-color: white;
 		padding: 5px;
 		cursor: pointer;
+		transition: 0.5s ease-in-out;
 	}
 
 	.refresh:focus-visible {
@@ -169,27 +178,25 @@ import words from './words.js';
 	}
 
 	:global(body.dark-mode) .selected {
-		color: var(--lightTextColor);
+		color: var(--darkTextColor);
 	}
-	:global(body.dark-mode) .timer  {
+	:global(body.dark-mode) .timer {
 		color: white;
 	}
 
-	:global(body.dark-mode) .refresh  {
+	:global(body.dark-mode) .refresh {
 		background-color: var(--darkBackground);
 	}
 
-	:global(body.dark-mode) .refresh:focus-visible  {
-		border: var(--lightTextColor);
+	:global(body.dark-mode) .refresh:focus-visible {
+		border: var(--darkTextColor);
 	}
-	:global(body.dark-mode) .container {
-		background-color: var(--darkBackground);
-	}
+	
 	#blink {
 		position: relative;
 		animation: blinkLight 1s infinite;
 		height: 35px;
-		width: 2.5px;
+		width: 2px;
 		background-color: var(--lightTextColor);
 	}
 	:global(body.dark-mode) #blink {
@@ -210,7 +217,7 @@ import words from './words.js';
 		100% {
 			background-color: var(--lightTextColor);
 		}
-	}	
+	}
 
 	@keyframes blinkDark {
 		50% {
@@ -219,8 +226,8 @@ import words from './words.js';
 		100% {
 			background-color: var(--lightTextColor);
 		}
-	}	
-	
+	}
+
 	.invisible {
 		visibility: hidden;
 	}
@@ -238,7 +245,7 @@ import words from './words.js';
 		color: var(--darkBackground);
 	}
 
-	.info{
+	.info {
 		font-size: 13px;
 		visibility: visible;
 		margin-top: 20px;

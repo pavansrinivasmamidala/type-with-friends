@@ -1,4 +1,9 @@
 <script>
+
+    import {page} from '$app/stores'
+
+   
+    
 </script>
 
 <div class="container">
@@ -11,9 +16,9 @@
 		<a
 			class="btn"
 			tabindex="-1"
-			href="/multiplayer"
+			href={$page.routeId === 'multiplayer' ? '/' : '/multiplayer'}
 		>
-			Multiplayer</a
+		{$page.routeId !== 'multiplayer' ? 'Multiplayer' : 'Normal'}	</a
 		>
 	</div>
 </div>
@@ -58,15 +63,16 @@
 		font-weight: 600;
 		font-size: 24px;
 		border-radius: 10px;
-		opacity: 0.6;
+		opacity: 1;
         text-decoration:none;
+        transition: 0.5s ease-in-out;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 	}
 
 	.btn:hover {
 		opacity: 1.5;
-		box-shadow: 0 0 0.5rem -0.25rem var(--lightTextColor),
-			inset 0 0 0.1rem -0.75rem var(--lightTextColor);
+		box-shadow: 0 0 0.7rem -0.25rem var(--lightTextColor),
+			inset 0 0 1rem -0.75rem var(--lightTextColor);
 	}
 
 	:global(body.dark-mode) .heading {
@@ -79,7 +85,5 @@
 		opacity: 1;
 	}
 
-	:global(body.dark-mode) .container {
-		background-color: var(--darkBackground);
-	}
+	
 </style>

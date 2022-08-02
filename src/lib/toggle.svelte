@@ -13,8 +13,8 @@
 	}
 </script>
 
-<div class="container">
-	<input type="checkbox" id="switch" bind:checked={checked} on:click={toggle}  />
+<div class="toggle-div">
+	<input type="checkbox" id="switch" bind:checked on:click={toggle} />
 	<label for="switch">
 		<img src={sun} alt="sun" height="20px" id="sun" />
 		<img src={moon} alt="moon" height="20px" id="moon" />
@@ -23,10 +23,6 @@
 </div>
 
 <style>
-
-    .container{
-        margin-top: -30px;
-    }
 	label {
 		display: flex;
 		width: 35px;
@@ -42,7 +38,7 @@
 	}
 
 	#switch {
-		visibility: hidden;
+		display: none;
 	}
 
 	label img {
@@ -83,6 +79,7 @@
 		background: var(--lightTextColor);
 		border-radius: 50%;
 		transition: 0.5s;
+		opacity: 0.7;
 	}
 
 	input:checked + label .ball {

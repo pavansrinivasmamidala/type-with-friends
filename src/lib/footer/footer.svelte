@@ -17,7 +17,7 @@
 			class="btn"
 		>
 			<Icon data={telegram} scale="0.9" />
-			<span>Contact</span>
+			<span >Contact</span>
 		</a>
 		<a href="https://github.com/pavansrinivasmamidala/type-with-friends" target="_blank" class="btn">
 			<Icon data={code} scale="1" />
@@ -41,11 +41,12 @@
 		margin: auto;
 		max-width: 55vw;
 		justify-content: space-between;
+        
 	}
 
 	.btn {
 		text-decoration: none;
-		color: #62cfe6;
+		color: var(--lightTextColor);
 		border: none;
 		font-size: 16px;
 		font-weight: 600;
@@ -57,7 +58,6 @@
 	}
 
 	:global(body.dark-mode) .btn {
-		background-color: var(--darkBackground);
 		color: var(--lightTextColor);
 	}
 
