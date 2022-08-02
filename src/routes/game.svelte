@@ -97,7 +97,7 @@
 	<!-- show the speed after the test completed -->
 	<div>
 		<span class:speed={isCompleted}
-			>{isCompleted ? `${Math.trunc(main.length / (timer + 1 / 12))} WPM` : ''}</span
+			>{isCompleted ? `${Math.trunc(main.length / ((timer + 1) / 12))} WPM` : ''}</span
 		>
 	</div>
 

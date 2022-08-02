@@ -25,9 +25,19 @@
 
 	:global(body.dark-mode)  {
 		color: white;
+		
+	}
+	:global(body){
+		transition: all ease-in-out 0.5s;
 	}
 
 	:global(body.dark-mode) {
 		background-color: var(--darkBackground);
+	}
+	:global(:root) {
+		--lightTextColor: #62cfe6;
+		--lightBackground: white;
+		--darkTextColor: #5ed9f2;
+		--darkBackground: #03070f;
 	}
 </style>

@@ -14,6 +14,11 @@
 	--background-without-opacity: rgba(255, 255, 255, 0.7);
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
+	--lightTextColor:#62cfe6;
+	--lightBackground: white;
+	--darkTextColor:#5ed9f2;
+	--darkBackground:#03070f;
+	transition: all ease-in-out 1s;
 }
 
 body {
@@ -26,6 +31,7 @@ body {
 		var(--secondary-color) 10.45%,
 		var(--tertiary-color) 41.35%
 	);
+	transition: 0.5s ease-in-out;
 }
 
 body::before {
