@@ -1,7 +1,7 @@
 # Currently working on it
 
+![Screen Recording 2022-08-04 at 5 27 28 PM](https://user-images.githubusercontent.com/31120424/182989979-41ee9525-33e6-4bfc-9aba-a9e15a605608.gif)
 
-https://user-images.githubusercontent.com/31120424/182989769-7c9129fc-4f78-4089-9cc6-a072567d3c58.mov
 
 
 Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
