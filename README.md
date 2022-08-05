@@ -1,6 +1,11 @@
 # Currently working on it
 
-![Screen Recording 2022-08-04 at 5 27 28 PM](https://user-images.githubusercontent.com/31120424/182989979-41ee9525-33e6-4bfc-9aba-a9e15a605608.gif)
+<img width="1464" alt="image" src="https://user-images.githubusercontent.com/31120424/182990328-debd99a3-dff0-44d6-8f05-0c050ec95524.png">
+
+
+
+
+<img width="1464" alt="image" src="https://user-images.githubusercontent.com/31120424/182990372-b24135fb-81f1-48f2-9efd-c34ab197d154.png">
 
 
 
