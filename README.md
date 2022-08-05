@@ -1,5 +1,9 @@
 # Currently working on it
 
+
+https://user-images.githubusercontent.com/31120424/182989769-7c9129fc-4f78-4089-9cc6-a072567d3c58.mov
+
+
 Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
 
 ## Creating a project
