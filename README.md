@@ -1,5 +1,6 @@
 # Currently working on it
 
+Hugely inspired by monkeytype.com, I want to build something with a similar UI but with multiplayer functionality.
 
 ## Light Mode
 
