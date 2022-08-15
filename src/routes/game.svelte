@@ -1,9 +1,29 @@
 <script>
 	// @ts-nocheck
-
+	import {wordsArray, response} from '../lib/store.js'
+	import { onMount } from 'svelte';
 	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
+
+	// onMount(async () => {
+	// 	fetch('https://api.quotable.io/random?minLength=200&maxLength=250').then(
+	// 		response => response.json()
+	// 	).then(data => {
+	// 		console.log(data);
+	// 		response.set(data);
+	// 	}).catch(err => {
+	// 		console.log(err);
+	// 	});
+	// });
+
+	onMount(async () => {
+		fetch('http://localhost:3000', {
+			mode:'no-cors'
+		}).then(
+			response => console.log(response)
+		)
+	})
 
 	let main = [];
 	let index = 0;
@@ -49,6 +69,9 @@
 	// if a key is entered it needs to go through all the checks
 	// before doing anything
 	function handleKeydown(event) {
+
+		console.log(wordsArray);
+
 		// check these before starting the timer
 		if (!timerRunning && isCharALetter(event.key) && !isCompleted) {
 			timerRunning = true;
@@ -88,7 +111,6 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <div class="container">
-
 	<!-- show timer after the test starts-->
 	<div>
 		<span class:invisible={!timerRunning} class="timer">{timer}</span>
@@ -102,7 +124,7 @@
 	</div>
 
 	<!-- div which displays the letters -->
-	<div class="words">
+	<!-- <div class="words">
 		{#each main as letter, i}
 			{#if i === index}
 				<p id="blink" />
@@ -112,6 +134,16 @@
 			{:else}
 				<p class:selected={i < index} class="letter">{letter}</p>
 			{/if}
+		{/each}
+	</div> -->
+
+	<div class="words">
+		{#each updatedWords as word, idx}
+		<div style="display: flex; padding-right:5px;">
+		{#each word as  letter, i}
+			<p>{letter}</p>
+		{/each}
+		</div>
 		{/each}
 	</div>
 
@@ -191,7 +223,7 @@
 	:global(body.dark-mode) .refresh:focus-visible {
 		border: var(--darkTextColor);
 	}
-	
+
 	#blink {
 		position: relative;
 		animation: blinkLight 1s infinite;
@@ -212,10 +244,10 @@
 
 	@keyframes blinkLight {
 		50% {
-			background-color: white;
+			opacity: 0;
 		}
 		100% {
-			background-color: var(--lightTextColor);
+			opacity: 1;
 		}
 	}
 

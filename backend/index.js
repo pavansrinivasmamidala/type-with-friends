@@ -1,12 +1,14 @@
 const express = require('express');
 const app = express();
-const socketio = require('socket.io');
 const mongoose = require('mongoose');
-
-const expressServer = app.listen(3001);
-const io = socketio(expressServer);
-
-const uri = 'mongodb+srv://admin:iluv@1d@cluster0.ej4gm.mongodb.net/?retryWrites=true&w=majority';
+app.listen(3000);
+// const io = require('socket.io')(expressServer, {
+//     cors: {
+//         origin: "*",
+//         methods: ["GET", "POST"]
+//       }
+// });
+const uri = 'mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.5.4';
 
 mongoose.connect(
 	uri,
@@ -41,17 +43,51 @@ const GameSchema = new mongoose.Schema({
 
 const Game = mongoose.model('Game',GameSchema);
 
-io.on('connection', (socket) => {
-	console.log('connected to a user');
-	socket.on('disconnect', () => {
-		console.log('user disconnected');
-	});
+// io.on('connection',  (socket) => {
+// 	console.log('connected to a user');
+// 	socket.on('disconnect', () => {
+// 		console.log('user disconnected');
+// 	});
 
-	socket.on('message', (msg) => {
-		let game = new Game();
+// 	socket.on('message', async (msg) => {
+// 		let game = new Game();
 
-        game.words.push(msg);
+//         game.words.push(msg);
 
-        console.log(game);
-	});
-});
+//         console.log(game);
+
+//         game = await game.save();
+
+//         console.log(game)
+// 	});
+// });
+
+const wordsArray = [];
+let word = [];
+
+
+fetch('https://api.quotable.io/random?minLength=250&maxLength=280').then(
+            response => response.json()
+        ).then(data => {
+
+            data.content.split('').map((item) => {
+                word.push({
+                    text:item,
+                    isActive: false,
+                    isWrong:false
+                });
+                if(item == ' '){
+                    wordsArray.push(word);
+                    word = [];
+                }
+                
+            })
+        }).catch(err => {
+            console.log(err);
+        });
+
+
+app.get('/', (req,res) => {
+    console.log('get req is made');
+    res.send('is this working');
+})
