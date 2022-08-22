@@ -124,7 +124,7 @@
 	</div>
 
 	<!-- div which displays the letters -->
-	<!-- <div class="words">
+	<div class="words">
 		{#each main as letter, i}
 			{#if i === index}
 				<p id="blink" />
@@ -135,9 +135,9 @@
 				<p class:selected={i < index} class="letter">{letter}</p>
 			{/if}
 		{/each}
-	</div> -->
+	</div>
 
-	<div class="words">
+	<!-- <div class="words">
 		{#each updatedWords as word, idx}
 		<div style="display: flex; padding-right:5px;">
 		{#each word as  letter, i}
@@ -145,7 +145,7 @@
 		{/each}
 		</div>
 		{/each}
-	</div>
+	</div> -->
 
 	<div>
 		<button class="refresh" onclick="location.reload()">

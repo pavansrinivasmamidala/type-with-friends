@@ -22,12 +22,10 @@
 		height: 80vh;
 	}
 
-
-	:global(body.dark-mode)  {
+	:global(body.dark-mode) {
 		color: white;
-		
 	}
-	:global(body){
+	:global(body) {
 		transition: all ease-in-out 0.5s;
 	}
 
