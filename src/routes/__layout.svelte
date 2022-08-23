@@ -22,6 +22,11 @@
 		height: 80vh;
 	}
 
+	:global(body) {
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+			'Open Sans', 'Helvetica Neue', sans-serif;
+	}
+
 	:global(body.dark-mode) {
 		color: white;
 	}

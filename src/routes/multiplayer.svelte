@@ -5,6 +5,7 @@
 	import link from '../lib/icons/link.png';
 	import send from '../lib/icons/send.png';
 	var test = '';
+	let startGame = true;
 	const socket = io('http://localhost:3001');
 	console.log('multiplayer is loaded');
 
@@ -14,6 +15,8 @@
 	socket.on('test', (msg) => {
 		test = msg;
 	});
+
+	var move = 0;
 
 	let owner = "Owner's Lobby";
 	let url = '/h564jg';
@@ -26,48 +29,107 @@
 </script>
 
 <div class="container">
-	<div class="game-info">
+	{#if startGame}
 		<div>
-			<span class="owner-name">{owner}</span>
-		</div>
-		<!-- <button 
-		on:click={() => socketFunction()}> click</button> -->
-		<div>
-			<button class="copy" on:click={() => copy()}>
-				<img src={link} height="20px" style="margin-right: 5px;" alt="copy-icon" />
-				<span class="url">Copy Link</span>
-			</button>
-		</div>
-	</div>
-
-	<div class="game-options">
-		<div class="chat-window">
-			<div />
-			<div>
-				<input type="text" class="chat-input" />
-				<img src={send} alt="send-icon" class="send-icon" />
-			</div>
-		</div>
-		<div class="player-info">
 			<div>
 				{#each players as player}
-				<div class="player">
-					<p class="profile" />
-					<span class="player-name">{player}</span>
-				</div>
-			{/each}
+					<div class="tracker">
+						<span class="player-name">{player}</span>
+						<p class="ball" style={`transform: translateX(${move}%);`} />
+						<p class="line" />
+					</div>
+				{/each}
 			</div>
-			
-			<button class="start-game">Start Game</button>
+			<button
+				on:click={() => {
+					move = move + 100;
+				}}
+				style="cursor: pointer;">move</button
+			>
+			<button
+				class="start-game"
+				on:click={() => {
+					startGame = !startGame;
+				}}>{startGame ? 'Menu' : 'Start Game'}</button
+			>
 		</div>
-	</div>
+	{:else}
+		<div class="game-info">
+			<div class="margin-bottom-30">
+				<span class="owner-name">{owner}</span>
+			</div>
+			<!-- <button 
+			on:click={() => socketFunction()}> click</button> -->
+			<div class="chat-window">
+				<div />
+				<div class="input-div">
+					<input type="text" class="chat-input" />
+					<button class="send-button">send</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="game-options">
+			<div class="margin-bottom-30">
+				<button class="copy" on:click={() => copy()}>
+					<img src={link} height="20px" style="margin-right: 5px;" alt="copy-icon" />
+					<span class="url">Copy Link</span>
+				</button>
+			</div>
+			<div class="player-info">
+				<div class="players">
+					{#each players as player}
+						<div class="player">
+							<p class="profile" />
+							<span class="player-name">{player}</span>
+						</div>
+					{/each}
+				</div>
+
+				<button
+					class="start-game"
+					on:click={() => {
+						startGame = !startGame;
+					}}>{startGame ? 'Menu' : 'Start Game'}</button
+				>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
+	.line {
+		background-color: var(--darkBackground);
+		width: 50vw;
+		height: 3px;
+		border-radius: 4px;
+		margin-bottom: 25px;
+	}
+
+	.ball {
+		background-color: var(--darkBackground);
+		box-shadow: 0 0 0.2rem 0.025rem var(--lightTextColor),
+			inset 0 0 1rem -0.75rem var(--lightTextColor);
+		height: 15px;
+		width: 15px;
+		border-radius: 100%;
+		transform: translateX(20px);
+		margin-bottom: -26px;
+		transition: ease-in-out all 0.5s;
+	}
+
+	:global(body.dark-mode) .line{
+		background-color: var(--lightTextColor);
+	}
+
+	:global(body.dark-mode) .ball{
+		background-color: var(--lightTextColor);
+		box-shadow: none;
+	}
+
 	.container {
 		padding: 50px;
 		display: flex;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 	}
@@ -75,21 +137,18 @@
 	.game-info {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
-		height: 30px;
+		flex-direction: column;
 		box-shadow: 3px;
-		padding: 20px;
-		width: 55vw;
+		margin: 30px;
+		width: 42vw;
 		border-radius: 15px;
 	}
 
 	.owner-name {
 		font-size: 26px;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
-			'Open Sans', 'Helvetica Neue', sans-serif;
 		font: bold;
 		color: var(--lightTextColor);
-		padding: 8px 20px;
+		margin-bottom: 30px;
 	}
 
 	.copy {
@@ -113,9 +172,10 @@
 
 	.game-options {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
-		margin-top: 40px;
+		flex-direction: column;
+		max-height: 52vh;
 	}
 
 	.chat-window {
@@ -131,27 +191,48 @@
 		position: relative;
 	}
 
+	.input-div {
+		display: flex;
+		justify-content: flex-end;
+		align-items: flex-start;
+	}
+
 	.chat-input {
+		width: 85%;
+		border-top: 2px var(--darkBackground) solid;
+		border-right: 2px var(--darkBackground) solid;
+		border-left: none;
+		border-bottom: none;
+		border-radius: 4px;
+		height: 4vh;
+		font-size: 22px;
+		color: var(--darkBackground);
+		background: none;
+		box-shadow: none;
 		position: absolute;
 		bottom: 0;
 		left: 0;
-		width: 91%;
-		border-top: 2px var(--darkBackground) solid;
-		border-right: 2px var(--darkBackground) solid;
-		border-radius: 4px;
-		height: 4vh;
-		background: none;
-		box-shadow: none;
+		padding-left: 4px;
 	}
 
-	.send-icon {
-		position: absolute;
-		bottom: 5px;
-		right: 5px;
-		height: 20px;
+	.chat-input:focus {
+		outline: none;
+	}
+
+	.send-button {
+		width: 12%;
 		cursor: pointer;
-		padding: 7px;
+		color: white;
 		border-radius: 5px;
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		background-color: var(--lightTextColor);
+		border: none;
+		height: 4vh;
+		font-size: 20px;
+		opacity: 0.75;
+		margin: 4px;
 	}
 
 	.player-info {
@@ -159,8 +240,13 @@
 		flex-direction: column;
 		align-items: flex-start;
 		justify-content: space-between;
-		margin-left: 30px;
+
 		height: 45vh;
+	}
+
+	.players {
+		max-height: 10vh;
+		margin-left: 5px;
 	}
 	.player {
 		display: flex;
@@ -177,15 +263,14 @@
 		background-color: var(--darkBackground);
 	}
 
-	.player-name{
-		font-size: 24px;
+	.player-name {
+		font-size: 22px;
 		font: bold;
-
 		color: var(--lightTextColor);
 	}
 
 	.start-game {
-		padding: 8px 16px;
+		padding: 8px 12px;
 		border-radius: 8px;
 		background: none;
 		color: var(--lightTextColor);
@@ -193,8 +278,11 @@
 			inset 0 0 0.5rem -0.75rem var(--lightTextColor);
 		cursor: pointer;
 		border: 2px var(--darkBackground) solid;
-		font-size: 20px;
-		width: 150px;
+		font-size: 22px;
+	}
+
+	.margin-bottom-30 {
+		margin-bottom: 30px;
 	}
 
 	:global(body.dark-mode) .chat-window {
@@ -214,5 +302,14 @@
 	:global(body.dark-mode) .chat-input {
 		border-top: 2px white solid;
 		border-right: 2px white solid;
+		color: white;
+	}
+
+	:global(body.dark-mode) .start-game {
+		border: 1px solid white;
+	}
+
+	:global(body.dark-mode) .player-name {
+		color: white;
 	}
 </style>
