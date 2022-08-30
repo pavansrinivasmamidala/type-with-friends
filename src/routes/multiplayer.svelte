@@ -2,10 +2,12 @@
 	// @ts-nocheck
 
 	import io from 'socket.io-client';
+	import { onMount } from 'svelte';
 	import link from '../lib/icons/link.png';
 	import send from '../lib/icons/send.png';
 	var test = '';
-	let startGame = true;
+	let startGame = false;
+	let tooltip = 'its working';
 	const socket = io('http://localhost:3001');
 	console.log('multiplayer is loaded');
 
@@ -24,8 +26,12 @@
 	let players = ['Player 1', 'Player 2', 'Player 3'];
 
 	function copy() {
-		navigator.clipboard.writeText(url);
+		navigator.clipboard.writeText(url.slice(1));
 	}
+
+	// onMount(async() => {
+	// 	prompt('is this working');
+	// });
 </script>
 
 <div class="container">
@@ -44,13 +50,17 @@
 				on:click={() => {
 					move = move + 100;
 				}}
-				style="cursor: pointer;">move</button
+				class="btn">move</button
 			>
 			<button
-				class="start-game"
+				class="btn"
+				data-tooltip={tooltip}
 				on:click={() => {
 					startGame = !startGame;
-				}}>{startGame ? 'Menu' : 'Start Game'}</button
+				}}
+			>
+				<slot />
+				{startGame ? 'Menu' : 'Start Game'}</button
 			>
 		</div>
 	{:else}
@@ -87,7 +97,7 @@
 				</div>
 
 				<button
-					class="start-game"
+					class="btn"
 					on:click={() => {
 						startGame = !startGame;
 					}}>{startGame ? 'Menu' : 'Start Game'}</button
@@ -118,11 +128,11 @@
 		transition: ease-in-out all 0.5s;
 	}
 
-	:global(body.dark-mode) .line{
+	:global(body.dark-mode) .line {
 		background-color: var(--lightTextColor);
 	}
 
-	:global(body.dark-mode) .ball{
+	:global(body.dark-mode) .ball {
 		background-color: var(--lightTextColor);
 		box-shadow: none;
 	}
@@ -269,7 +279,7 @@
 		color: var(--lightTextColor);
 	}
 
-	.start-game {
+	.btn {
 		padding: 8px 12px;
 		border-radius: 8px;
 		background: none;

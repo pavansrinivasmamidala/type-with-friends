@@ -192,12 +192,12 @@
 		transition: 0.5s ease-in-out;
 	}
 
-	.refresh:focus-visible {
+	/* .refresh:focus-visible {
 		outline: 1px solid var(--darkBackground);
 		background-color: var(--darkBackground);
 		border-radius: 4px;
 		padding-bottom: 0px;
-	}
+	} */
 
 	p {
 		font-size: large;
