@@ -4,6 +4,7 @@ import {  derived, writable } from "svelte/store";
 
 export const response = writable({});
 
+export const nick = writable("");
 
 export const wordsArray = derived(response, ($response) => {
     if($response.content){
@@ -12,3 +13,5 @@ export const wordsArray = derived(response, ($response) => {
     }
     return [];
 })
+
+

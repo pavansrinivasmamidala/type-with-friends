@@ -1,29 +1,45 @@
 <script>
+	// @ts-nocheck
+
 	import Icon from 'svelte-awesome';
 	import user from 'svelte-awesome/icons/user';
 	import users from 'svelte-awesome/icons/users';
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
-	let nick = '';
+	import { nick } from '../lib/store.js';
+	import { onDestroy } from 'svelte';
+
+	let nickName = '';
+	let test = '';
+
+	const unsub = nick.subscribe((value) => {
+		test = value;
+		nickName = value;
+	});
+
+	function appendNick() {
+		nick.update((nick) => (nick = nickName));
+	}
+
+	onDestroy(unsub);
 </script>
 
 <div class="container">
 	<div class="nick-div">
-		<input type="text" bind:value={nick} class="nick-input" placeholder="Enter nick name" />
-		<Icon
-			data={arrowRight}
-			scale={1.2}
-			style="
-		color: white;
-		border-radius: 50%;
-		background-color: var(--lightTextColor);
-		border: 2px solid var(--lightTextColor);
-		padding:10px 12px;
-		margin-left:8px;
-		cursor:pointer;
-		"
-		/>
+		<form on:submit|preventDefault={() => appendNick()}>
+			<!-- svelte-ignore a11y-autofocus -->
+			<input
+				type="text"
+				autofocus
+				disabled={test}
+				bind:value={nickName}
+				class="nick-input"
+				placeholder="Enter nick name"
+			/><button class="arrow-icon" on:click={() => appendNick()}>
+				<Icon data={arrowRight} scale={1.2} style="color: white;" />
+			</button>
+		</form>
 	</div>
-	{#if nick}
+	{#if test}
 		<div class="buttons">
 			<a class="icon-button" href="/solo">
 				<Icon data={user} scale={10} style="color:var(--lightTextColor)" />
@@ -82,6 +98,8 @@
 		border-radius: 7px;
 		padding-left: 8px;
 		width: 30vw;
+		background-color: white;
+		color:var(--darkBackground);
 	}
 
 	.nick-input:focus {
@@ -90,21 +108,12 @@
 	}
 
 	.arrow-icon {
-		color: var(--lightTextColor);
-		border-radius: 100%;
+		border-radius: 50%;
+		background-color: var(--lightTextColor);
 		border: 2px solid var(--lightTextColor);
-	}
-
-	.btn {
-		padding: 8px 12px;
-		border-radius: 8px;
-		background: none;
-		color: var(--lightTextColor);
-		box-shadow: 0 0 0.3rem -0.25rem var(--lightTextColor),
-			inset 0 0 0.5rem -0.75rem var(--lightTextColor);
+		padding: 10px 12px;
+		margin-left: 8px;
 		cursor: pointer;
-		border: 2px var(--darkBackground) solid;
-		font-size: 22px;
 	}
 
 	:global(body.dark-mode) .icon-button {

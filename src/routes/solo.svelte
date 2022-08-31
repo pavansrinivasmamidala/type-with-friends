@@ -1,10 +1,12 @@
 <script>
 	// @ts-nocheck
-	import {wordsArray, response} from '../lib/store.js'
+	import { wordsArray, response } from '../lib/store.js';
 	import { onMount } from 'svelte';
 	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
+	import { nick } from '../lib/store';
+	import { onDestroy } from 'svelte';
 
 	// onMount(async () => {
 	// 	fetch('https://api.quotable.io/random?minLength=200&maxLength=250').then(
@@ -17,13 +19,17 @@
 	// 	});
 	// });
 
+	let nickName = '';
+
+	const unsub = nick.subscribe((value) => (nickName = value));
+
+	onDestroy(unsub);
+	
 	onMount(async () => {
 		fetch('http://localhost:3000', {
-			mode:'no-cors'
-		}).then(
-			response => console.log(response)
-		)
-	})
+			mode: 'no-cors'
+		}).then((response) => console.log(response));
+	});
 
 	let main = [];
 	let index = 0;
@@ -69,7 +75,6 @@
 	// if a key is entered it needs to go through all the checks
 	// before doing anything
 	function handleKeydown(event) {
-
 		console.log(wordsArray);
 
 		// check these before starting the timer
@@ -117,12 +122,13 @@
 	</div>
 
 	<!-- show the speed after the test completed -->
-	<div>
-		<span class:speed={isCompleted}
-			>{isCompleted ? `${Math.trunc(main.length / ((timer + 1) / 12))} WPM` : ''}</span
-		>
-	</div>
-
+	{#if isCompleted}
+		<div>
+			<span class="speed"
+				>{isCompleted ? `${Math.trunc(main.length / ((timer + 1) / 12))} WPM` : ''}</span
+			>
+		</div>
+	{/if}
 	<!-- div which displays the letters -->
 	<div class="words">
 		{#each main as letter, i}
@@ -192,12 +198,12 @@
 		transition: 0.5s ease-in-out;
 	}
 
-	/* .refresh:focus-visible {
-		outline: 1px solid var(--darkBackground);
+	.refresh:focus-visible {
+		outline: 2px solid var(--darkBackground);
 		background-color: var(--darkBackground);
-		border-radius: 4px;
+		border-radius: 10px;
 		padding-bottom: 0px;
-	} */
+	}
 
 	p {
 		font-size: large;
