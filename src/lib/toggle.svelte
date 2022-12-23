@@ -3,6 +3,18 @@
 
 	import moon from './icons/moon.png';
 	import sun from './icons/sun.png';
+	//import themeVar from '../lib/store';
+	import { browser } from '$app/env';
+	import { writable } from 'svelte/store';
+
+	if(browser){
+		const theme = localStorage.getItem('theme');
+		const themeVar = writable(theme || '');
+		console.log(themeVar);
+		themeVar.subscribe((value) => {
+			localStorage.setItem('theme', value);
+		});
+	}
 
 	let checked = false;
 	function toggle() {
@@ -20,6 +32,7 @@
 		<img src={moon} alt="moon" height="20px" id="moon" />
 		<span class="ball" />
 	</label>
+	
 </div>
 
 <style>

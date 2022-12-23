@@ -1,35 +1,18 @@
 <script>
 	// @ts-nocheck
 	import { wordsArray, response } from '../lib/store.js';
-	import { onMount } from 'svelte';
 	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
 	import { nick } from '../lib/store';
 	import { onDestroy } from 'svelte';
 
-	// onMount(async () => {
-	// 	fetch('https://api.quotable.io/random?minLength=200&maxLength=250').then(
-	// 		response => response.json()
-	// 	).then(data => {
-	// 		console.log(data);
-	// 		response.set(data);
-	// 	}).catch(err => {
-	// 		console.log(err);
-	// 	});
-	// });
 
 	let nickName = '';
 
 	const unsub = nick.subscribe((value) => (nickName = value));
 
 	onDestroy(unsub);
-	
-	onMount(async () => {
-		fetch('http://localhost:3000', {
-			mode: 'no-cors'
-		}).then((response) => console.log(response));
-	});
 
 	let main = [];
 	let index = 0;
@@ -53,6 +36,7 @@
 			main.push(letter);
 		});
 	});
+
 
 	// checks if the entered character is a character or not
 	function isCharALetter(char) {
@@ -143,16 +127,6 @@
 		{/each}
 	</div>
 
-	<!-- <div class="words">
-		{#each updatedWords as word, idx}
-		<div style="display: flex; padding-right:5px;">
-		{#each word as  letter, i}
-			<p>{letter}</p>
-		{/each}
-		</div>
-		{/each}
-	</div> -->
-
 	<div>
 		<button class="refresh" onclick="location.reload()">
 			<Icon data={rotateRight} scale="1.5" style="color:var(--lightTextColor)" />
@@ -199,7 +173,7 @@
 	}
 
 	.refresh:focus-visible {
-		outline: 2px solid var(--darkBackground);
+		outline: none;
 		background-color: var(--darkBackground);
 		border-radius: 10px;
 		padding-bottom: 0px;

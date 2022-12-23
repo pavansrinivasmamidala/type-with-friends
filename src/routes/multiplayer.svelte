@@ -1,28 +1,27 @@
 <script>
 	// @ts-nocheck
 
-	import io from 'socket.io-client';
+	import { io } from '$lib/realtime';
 	import { onMount } from 'svelte';
 	import play from 'svelte-awesome/icons/play';
 	import { Icon } from 'svelte-awesome';
 	import link from '../lib/icons/link.png';
-	import { nick } from '../lib/store';
+	import { nick, game } from '../lib/store';
 	import { onDestroy } from 'svelte';
 	import Chat from '$lib/chat/chat.svelte';
 	import Tracker from '$lib/tracker/tracker.svelte';
-
+	
 	var test = '';
 	let startGame = false;
 	let tooltip = false;
-	// const socket = io('http://localhost:3001');
-	// console.log('multiplayer is loaded');
 
-	// function socketFunction() {
-	// 	socket.emit('message', 'test input');
-	// }
-	// socket.on('test', (msg) => {
-	// 	test = msg;
-	// });
+	onMount(() =>{
+		io.emit('new-game',{});
+		io.on('game-created', game => {
+			game.update((game) => (game = game));
+			console.log(game);
+		})
+	})
 
 	let url = '/h564jg';
 	let tooltipText = 'Click to copy';
@@ -31,7 +30,7 @@
 
 	function copy() {
 		navigator.clipboard.writeText(url.slice(1));
-		tooltipText = 'Copied';
+		tooltipText = 'Copied!';
 	}
 
 	let nickName = '';

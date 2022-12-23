@@ -1,19 +1,48 @@
 <script>
+	// @ts-nocheck
 
+	import { io } from '$lib/realtime';
+	import { onMount } from 'svelte';
+	import { nick } from '../store';
 
+	let text = '';
+	let messages = [];
+
+	onMount(() => {});
+
+	io.on('message', (message) => {
+		messages.push(message);
+		console.log(messages);
+	});
+
+	let nickName = '';
+	const unsub = nick.subscribe((value) => (nickName = value));
+
+	function sendMessage() {
+		const msg = text.trim();
+		if (!msg) return;
+
+		text = '';
+		io.emit('message', { playerId: nickName, message: msg });
+	}
 </script>
 
 <div class="chat-window">
-    <div />
-    <div class="input-div">
-        <input type="text" class="chat-input" />
-        <button class="send-button">send</button>
-    </div>
+	<div>
+		{#if messages}
+			{#each messages as message}
+				<p>{message ? message.message : ''}</p>
+			{/each}
+		{/if}
+	</div>
+	<div class="input-div">
+		<input type="text" class="chat-input" bind:value={text} />
+		<button class="send-button" on:click={sendMessage}>send</button>
+	</div>
 </div>
 
-
 <style>
-    .chat-window {
+	.chat-window {
 		height: 45vh;
 		border: 1px solid black;
 		width: 40vw;
@@ -31,7 +60,7 @@
 		justify-content: flex-end;
 		align-items: flex-start;
 	}
-    .chat-input {
+	.chat-input {
 		width: 85%;
 		border-top: 2px var(--darkBackground) solid;
 		border-right: 2px var(--darkBackground) solid;
@@ -69,13 +98,13 @@
 		margin: 4px;
 	}
 
-    :global(body.dark-mode) .chat-input {
+	:global(body.dark-mode) .chat-input {
 		border-top: 2px white solid;
 		border-right: 2px white solid;
 		color: white;
 	}
 
-    :global(body.dark-mode) .chat-window {
+	:global(body.dark-mode) .chat-window {
 		border: 2px solid white;
 	}
 </style>

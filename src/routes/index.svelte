@@ -7,7 +7,7 @@
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
 	import { nick } from '../lib/store.js';
 	import { onDestroy } from 'svelte';
-
+	import { io } from '$lib/realtime';
 	let nickName = '';
 	let test = '';
 
@@ -18,6 +18,9 @@
 
 	function appendNick() {
 		nick.update((nick) => (nick = nickName));
+		io.emit('new-player',{
+			nickName: nickName
+		})
 	}
 
 	onDestroy(unsub);
@@ -26,7 +29,6 @@
 <div class="container">
 	<div class="nick-div">
 		<form on:submit|preventDefault={() => appendNick()}>
-			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				type="text"
 				autofocus
@@ -50,6 +52,7 @@
 			</a>
 		</div>
 	{/if}
+
 </div>
 
 <style>

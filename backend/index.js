@@ -1,17 +1,16 @@
+/* eslint-disable no-unused-vars */
 const express = require('express');
+
+const Game = require('./schemas/Game');
+const Player = require('./schemas/Player');
 const app = express();
-const http = require('http')
+const http = require('http');
 const server = http.createServer(app);
 const mongoose = require('mongoose');
 server.listen(3001);
-const {Server} = require('socket.io')
-const io = new Server(server, {
-    cors:{
-        origin:"*",
-        methods:['GET','POST']
-    }
-})
-const uri = 'mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.5.4';
+const { Server } = require('socket.io');
+const uri =
+	'mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.5.4';
 
 mongoose.connect(
 	uri,
@@ -24,54 +23,54 @@ mongoose.connect(
 	}
 );
 
-
-const PlayerSchema = new mongoose.Schema({
-    currentWordIndex : {
-        type: Number,
-        default : 0
-    },
-    socketID : {type : String},
-    isPartyLeader : {type : Boolean,default : false},
-    WPM : {type : Number, default: -1},
-    nickName : {type : String}
+const io = new Server(server, {
+	cors: {
+		origin: '*',
+		methods: ['GET', 'POST']
+	}
 });
 
-const GameSchema = new mongoose.Schema({
-    words : [{type : String}],
-    isOpen : {type : Boolean,default : true},
-    isOver : {type : Boolean,default : false},
-    players : [PlayerSchema],
-    startTime : {type : Number}
-});
-
-const Game = mongoose.model('Game',GameSchema);
-let game = new Game();
-io.on('connection',  (socket) => {
+io.on('connection', (socket) => {
 	console.log('connected to a user');
-    
-    //console.log(game)
-	socket.on('disconnect', () => {
-		console.log('user disconnected');
+
+	socket.on('new-player', async (data) => {
+		console.log('adding a new player');
+
+		let player = new Player();
+
+		player.nickName = data.nickName;
+		player.isPartyLeader = true;
+		console.log(player);
+		socket.emit('new-player', player);
 	});
 
-	socket.on('message', async (msg) => {
-        console.log('message event is emitted')
-		
+	socket.on('new-game', async (data) => {
+		let game = new Game();
 
-        game.words.push(msg);
+		socket.emit('game-created', game);
+	});
 
-        //console.log(game);
+	socket.on('message', async (data) => {
+		console.log('message event is emitted');
 
-        game = await game.save();
+		let game = Game.findById(data.gameId);
+		game.chat.push(data);
 
-        console.log(game);
-        io.emit('test', 'hello');
+		//console.log(game);
+
+		game = await game.save();
+
+		console.log(game);
+		socket.emit('message', game.chat);
+	});
+
+	socket.on('disconnect', () => {
+		console.log('user disconnected');
 	});
 });
 
 const wordsArray = [];
 let word = [];
-
 
 // fetch('https://api.quotable.io/random?minLength=250&maxLength=280').then(
 //             response => response.json()
@@ -87,12 +86,11 @@ let word = [];
 //                     wordsArray.push(word);
 //                     word = [];
 //                 }
-                
+
 //             })
 //         }).catch(err => {
 //             console.log(err);
 //         });
-
 
 // app.get('/', (req,res) => {
 //     console.log('get req is made');

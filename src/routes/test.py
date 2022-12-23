@@ -1,0 +1,3 @@
+while(True):
+    clusters = []
+    for i in range(k):clusters.append([])#print(clusters)#clusters = [[[6,1],[]],[[1,5],[]]]for point in dataPoints:#print(point)closestCluster = [0,euclidean_distance(point,centroids[0])]#print(closestCluster)for i in range(1,k):#print(i)dist = euclidean_distance(point,centroids[i])#print(dist)if (dist<closestCluster[1]):closestCluster=[i,dist]clusters[closestCluster[0]].append(point)print(clusters)
