@@ -39,29 +39,70 @@ io.on('connection', (socket) => {
 		let player = new Player();
 
 		player.nickName = data.nickName;
-		player.isPartyLeader = true;
-		console.log(player);
-		socket.emit('new-player', player);
+		player.isPartyLeader = data.partyLeader;
+		player.save((err, player) => {
+			if (err) console.err(err);
+			else {
+				console.log(player);
+				socket.emit('new-player', player);
+			}
+		});
 	});
 
 	socket.on('new-game', async (data) => {
 		let game = new Game();
 
-		socket.emit('game-created', game);
+		console.log(data);
+
+		game.players.push(data);
+
+		game.save(async (err, game) => {
+			if (err) console.err(err);
+			else {
+				console.log(game);
+				socket.emit('game-created', game);
+			}
+		});
+	});
+
+	socket.on('get-players', async (data) => {
+		const game = await Game.findById(data.gameId).exec();
+
+		const players = await Promise.all(
+			game.players.map(async (playerId) => {
+				const player = await Player.findById(playerId).exec();
+				return player;
+			})
+		);
+		console.log('found players:', players);
+
+		socket.emit('players', players);
 	});
 
 	socket.on('message', async (data) => {
 		console.log('message event is emitted');
+		console.log(data);
 
-		let game = Game.findById(data.gameId);
-		game.chat.push(data);
+		// let game = Game.findById(data.gameId);
+		// console.log(game);
 
-		//console.log(game);
+		Game.findOneAndUpdate(
+			{
+				_id: data.gameId
+			},
+			{ $push: { chat: { playerId: data.playerId, message: data.message } } },
+			{ new: true },
+			(err, result) => {
+				if (err) console.error(err);
+				else {
+					console.log('updated game ', result);
+					socket.emit('message', result.chat);
+				}
+			}
+		);
+		//game.chat.push({playerId: data.playerId, message: data.message});
 
-		game = await game.save();
-
-		console.log(game);
-		socket.emit('message', game.chat);
+		//game = await game.save();
 	});
 
 	socket.on('disconnect', () => {

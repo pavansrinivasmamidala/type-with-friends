@@ -5,7 +5,7 @@
 	import user from 'svelte-awesome/icons/user';
 	import users from 'svelte-awesome/icons/users';
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
-	import { nick } from '../lib/store.js';
+	import { nick, player } from '../lib/store.js';
 	import { onDestroy } from 'svelte';
 	import { io } from '$lib/realtime';
 	let nickName = '';
@@ -19,7 +19,12 @@
 	function appendNick() {
 		nick.update((nick) => (nick = nickName));
 		io.emit('new-player',{
-			nickName: nickName
+			nickName: nickName,
+			partyLeader: true
+		})
+		io.on('new-player',async (data) => {
+			player.update((player) => player = data);
+			console.log('player updated' + player);
 		})
 	}
 
@@ -29,6 +34,7 @@
 <div class="container">
 	<div class="nick-div">
 		<form on:submit|preventDefault={() => appendNick()}>
+			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				type="text"
 				autofocus

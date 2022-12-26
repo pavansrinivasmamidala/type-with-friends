@@ -6,38 +6,47 @@
 	import play from 'svelte-awesome/icons/play';
 	import { Icon } from 'svelte-awesome';
 	import link from '../lib/icons/link.png';
-	import { nick, game } from '../lib/store';
+	import { nick, game, player } from '../lib/store';
 	import { onDestroy } from 'svelte';
 	import Chat from '$lib/chat/chat.svelte';
 	import Tracker from '$lib/tracker/tracker.svelte';
-	
-	var test = '';
+
 	let startGame = false;
 	let tooltip = false;
-
-	onMount(() =>{
-		io.emit('new-game',{});
-		io.on('game-created', game => {
-			game.update((game) => (game = game));
-			console.log(game);
-		})
-	})
-
+	let nickName = '';
+	let gameData = {};
+	let playerData = {};
+	nick.subscribe((value) => (nickName = value));
+	game.subscribe((value) => (gameData = value));
+	player.subscribe((value) => (playerData = value));
 	let url = '/h564jg';
 	let tooltipText = 'Click to copy';
 
 	let players = ['Player 1', 'Player 2', 'Player 3'];
+
+	onMount(() => {
+		player.subscribe((value) => {
+			io.emit('new-game', value);
+			console.log(value);
+		});
+		io.on('game-created', (data) => {
+			game.update((game) => (game = data));
+			console.log(data);
+			io.emit('get-players', {gameId: data._id});
+		});
+		
+		io.on('players', (data) => {
+			console.log('this is the players data');
+			console.log(data);
+			players = data;
+		});
+	});
 
 	function copy() {
 		navigator.clipboard.writeText(url.slice(1));
 		tooltipText = 'Copied!';
 	}
 
-	let nickName = '';
-
-	const unsub = nick.subscribe((value) => (nickName = value));
-
-	onDestroy(unsub);
 </script>
 
 <div class="container">
@@ -85,7 +94,7 @@
 					{#each players as player}
 						<div class="player">
 							<p class="profile" />
-							<span class="player-name">{player}</span>
+							<span class="player-name">{player.nickName}</span>
 						</div>
 					{/each}
 				</div>

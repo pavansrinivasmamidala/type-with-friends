@@ -17,7 +17,8 @@ const GameSchema = new mongoose.Schema({
 			message: { type: String }
 		}
 	],
-	startTime: { type: Number }
+	startTime: Date,
+	endTime: Date
 });
 
 module.exports = mongoose.model('Game', GameSchema);

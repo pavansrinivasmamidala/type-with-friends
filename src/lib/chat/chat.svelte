@@ -3,37 +3,42 @@
 
 	import { io } from '$lib/realtime';
 	import { onMount } from 'svelte';
-	import { nick } from '../store';
+	import { nick, game, player } from '../store';
 
 	let text = '';
 	let messages = [];
+	let gameData = {};
+	let playerData = {};
 
 	onMount(() => {});
 
 	io.on('message', (message) => {
-		messages.push(message);
+		messages = [...message];
 		console.log(messages);
 	});
 
-	let nickName = '';
-	const unsub = nick.subscribe((value) => (nickName = value));
+		let nickName = '';
+	let nickUnsub = nick.subscribe((value) => (nickName = value));
+	let gameUnsub = game.subscribe((value) => (gameData = value));
+	let playerUnsub = player.subscribe((value) => (playerData = value));
 
 	function sendMessage() {
 		const msg = text.trim();
 		if (!msg) return;
 
+		console.log(gameData);
+		console.log(playerData);
+
 		text = '';
-		io.emit('message', { playerId: nickName, message: msg });
+		io.emit('message', { gameId: gameData._id, playerId: playerData._id, message: msg });
 	}
 </script>
 
 <div class="chat-window">
 	<div>
-		{#if messages}
-			{#each messages as message}
-				<p>{message ? message.message : ''}</p>
-			{/each}
-		{/if}
+		{#each messages as message}
+			<p>{message ? message.message : ''}</p>
+		{/each}
 	</div>
 	<div class="input-div">
 		<input type="text" class="chat-input" bind:value={text} />
