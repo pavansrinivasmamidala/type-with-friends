@@ -7,7 +7,7 @@
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
 	import { nick, player } from '../lib/store.js';
 	import { onDestroy } from 'svelte';
-	import { io } from '$lib/realtime';
+	import { io } from '../../lib/realtime';
 	let nickName = '';
 	let test = '';
 
