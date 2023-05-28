@@ -1,4 +1,4 @@
-<script>
+<!-- <script>
 	// @ts-nocheck
 
 	import { io } from '$lib/realtime';
@@ -69,8 +69,8 @@
 			<div class="margin-bottom-30">
 				<span class="owner-name">{nickName ? nickName : 'Owner'}'s lobby</span>
 			</div>
-			<!-- <button 
-			on:click={() => socketFunction()}> click</button> -->
+			 <button 
+			on:click={() => socketFunction()}> click</button> 
 			<Chat />
 		</div>
 
@@ -246,5 +246,20 @@
 
 	:global(body.dark-mode) .player-name {
 		color: white;
+	}
+</style> -->
+
+
+<span class="coming-soon"> Multiplayer Coming soon..!!</span>
+
+<style>
+	.coming-soon{
+		font-size: xx-large;
+		font-weight: 600;
+		padding-top: 200px;
+		text-align: center;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 </style>

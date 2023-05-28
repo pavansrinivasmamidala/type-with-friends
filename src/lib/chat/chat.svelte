@@ -17,10 +17,10 @@
 		console.log(messages);
 	});
 
-		let nickName = '';
-	let nickUnsub = nick.subscribe((value) => (nickName = value));
-	let gameUnsub = game.subscribe((value) => (gameData = value));
-	let playerUnsub = player.subscribe((value) => (playerData = value));
+	let nickName = '';
+	nick.subscribe((value) => (nickName = value));
+	game.subscribe((value) => (gameData = value));
+	player.subscribe((value) => (playerData = value));
 
 	function sendMessage() {
 		const msg = text.trim();
@@ -30,7 +30,12 @@
 		console.log(playerData);
 
 		text = '';
-		io.emit('message', { gameId: gameData._id, playerId: playerData._id, message: msg });
+		io.emit('message', {
+			gameId: gameData._id,
+			playerId: playerData._id,
+			playerNick: playerData.nickName,
+			message: msg
+		});
 	}
 </script>
 

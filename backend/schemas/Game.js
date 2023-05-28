@@ -14,6 +14,7 @@ const GameSchema = new mongoose.Schema({
 	chat: [
 		{
 			playerId: { type: mongoose.Types.ObjectId },
+			playerNick: {type: String},
 			message: { type: String }
 		}
 	],

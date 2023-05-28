@@ -83,14 +83,11 @@ io.on('connection', (socket) => {
 		console.log('message event is emitted');
 		console.log(data);
 
-		// let game = Game.findById(data.gameId);
-		// console.log(game);
-
 		Game.findOneAndUpdate(
 			{
 				_id: data.gameId
 			},
-			{ $push: { chat: { playerId: data.playerId, message: data.message } } },
+			{ $push: { chat: { playerId: data.playerId, playerNick: data.playerNick, message: data.message } } },
 			{ new: true },
 			(err, result) => {
 				if (err) console.error(err);
