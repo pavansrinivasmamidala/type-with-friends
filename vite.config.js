@@ -4,16 +4,18 @@ import { Server } from 'socket.io';
 /** @type {import('vite').UserConfig} */
 const config = {
 	plugins: [sveltekit(),
-		{
-			name: 'sveltekit-socket-io',
-			configureServer(server) {
-				const io = new Server(server.httpServer);
+		// {
+		// 	name: 'sveltekit-socket-io',
+		// 	configureServer(server) {
+		// 		const io = new Server(server.httpServer);
 
-				// Socket.IO stuff goes here                
+		// 		// Socket.IO stuff goes here                
 
-				console.log('SocketIO injected');
-			}
-		}]
+		// 		console.log('SocketIO injected');
+		// 	}
+		// }
+	]
+
 };
 
 export default config;

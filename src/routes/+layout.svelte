@@ -1,5 +1,5 @@
 <script>
-		import Header from '$lib/header/header.svelte';
+	import Header from '$lib/header/header.svelte';
 	import Footer from '$lib/footer/footer.svelte';
 </script>
 

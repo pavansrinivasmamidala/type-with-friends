@@ -1,10 +1,10 @@
 <script>
 	// @ts-nocheck
-	import { wordsArray, response } from '../lib/store.js';
-	import words from './solo/words.js';
+	import { wordsArray, response } from '$lib/store.js';
+	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
-	import { nick } from '../lib/store.js';
+	import { nick } from '$lib/store.js';
 	import { onDestroy } from 'svelte';
 
 

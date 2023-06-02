@@ -4,7 +4,7 @@
 	import moon from './icons/moon.png';
 	import sun from './icons/sun.png';
 	//import themeVar from '../lib/store';
-	import { browser } from '$app/env';
+	import { browser } from '$app/environment';
 	import { writable } from 'svelte/store';
 
 	if(browser){

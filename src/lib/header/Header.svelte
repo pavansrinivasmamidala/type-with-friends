@@ -1,5 +1,14 @@
 <script>
+// @ts-nocheck
+
 	import { page } from '$app/stores';
+
+
+	let routeId;
+	page.subscribe((page) => {
+		routeId = page.route.id; // get the route parameter 'id'
+		console.log(routeId);
+	});
 </script>
 
 <div class="container">
@@ -8,8 +17,8 @@
 		<span class="subheading">or anyone</span>
 	</div>
 
-	<div >
-		{#if $page.routeId == ''}
+	<div>
+		{#if routeId == ''}
 			<a href="https://monkeytype.com" class="monkeytype" target="_blank">
 				<div>
 					<span style="margin-right:6px"> Inspired by </span>
@@ -48,9 +57,9 @@
 			<a
 				class="btn"
 				tabindex="-1"
-				href={$page.routeId === 'multiplayer' ? '/solo' : '/multiplayer'}
+				href={routeId === '/multiplayer' ? '/solo' : '/multiplayer'}
 			>
-				{$page.routeId !== 'multiplayer' ? 'Multiplayer' : 'Single Player'}
+				{routeId !== '/multiplayer' ? 'Multiplayer' : 'Single Player'}
 			</a>
 		{/if}
 	</div>
