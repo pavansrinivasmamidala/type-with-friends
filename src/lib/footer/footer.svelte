@@ -4,7 +4,7 @@
 	import twitter from 'svelte-awesome/icons/twitter';
 	import telegram from 'svelte-awesome/icons/telegram';
 	import Icon from 'svelte-awesome';
-	import Toggle from '../../lib/toggle.svelte';
+	import Toggle from '$lib/toggle.svelte';
 </script>
 
 <div class="container">

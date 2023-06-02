@@ -1,7 +1,7 @@
 <script>
 	// @ts-nocheck
 
-	import { io } from '../realtime';
+	import { io } from '$lib/realtime';
 	import { onMount } from 'svelte';
 	import { nick, game, player } from '../store';
 

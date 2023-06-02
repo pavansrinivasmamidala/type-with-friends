@@ -133,7 +133,7 @@
 		</button>
 	</div>
 
-	<span class:info={isCompleted} class="invisible">Tab + Enter to restart</span>
+	<!-- <span class:info={isCompleted} class="invisible">Tab + Enter to restart</span> -->
 </div>
 
 <style>

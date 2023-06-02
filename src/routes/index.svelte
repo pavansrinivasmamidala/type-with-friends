@@ -7,7 +7,8 @@
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
 	import { nick, player } from '../lib/store.js';
 	import { onDestroy } from 'svelte';
-	import { io } from '../../lib/realtime';
+	import { io } from '$lib/realtime';
+	import { goto } from '$app/navigation';
 	let nickName = '';
 	let test = '';
 
@@ -18,18 +19,29 @@
 
 	function appendNick() {
 		nick.update((nick) => (nick = nickName));
-		io.emit('new-player',{
-			nickName: nickName,
-			partyLeader: true
-		})
-		io.on('new-player',async (data) => {
-			player.update((player) => player = data);
-			console.log('player updated' + player);
-		})
+		// io.emit('new-player',{
+		// 	nickName: nickName,
+		// 	partyLeader: true
+		// })
+		// io.on('new-player',async (data) => {
+		// 	player.update((player) => player = data);
+		// 	console.log('player updated' + player);
+		// })
+		goto("/solo");
+
 	}
 
 	onDestroy(unsub);
 </script>
+
+<script context="module">
+	export async function load({ fetch, session }) {
+	  return {
+		status: 301,
+		redirect: '/solo'
+	  };
+	}
+  </script>
 
 <div class="container">
 	<div class="nick-div">
@@ -47,7 +59,7 @@
 			</button>
 		</form>
 	</div>
-	{#if test}
+	<!-- {#if test}
 		<div class="buttons">
 			<a class="icon-button" href="/solo">
 				<Icon data={user} scale={10} style="color:var(--lightTextColor)" />
@@ -57,7 +69,7 @@
 				<Icon data={users} scale={10} style="color:var(--lightTextColor);" />
 			</a>
 		</div>
-	{/if}
+	{/if} -->
 
 </div>
 

@@ -1,8 +1,8 @@
 <script>
 	// @ts-nocheck
 
-	import words from '../../lib/words';
-
+	import words from '$lib/words';
+	
 	let wordsArray = [];
     let wordIndex = 0;
     let letterIndex = 0;
