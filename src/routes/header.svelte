@@ -7,7 +7,6 @@
 	let routeId;
 	page.subscribe((page) => {
 		routeId = page.route.id; // get the route parameter 'id'
-		console.log(routeId);
 	});
 </script>
 
