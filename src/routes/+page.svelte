@@ -8,10 +8,14 @@
 	import { nick, player } from '../lib/store.js';
 	import { onDestroy } from 'svelte';
 	import { io } from '$lib/realtime';
+	import { redirect } from '@sveltejs/kit';
 	import { goto } from '$app/navigation';
 	let nickName = '';
 	let test = '';
 
+	export function load() {
+		throw redirect(301, '/solo');
+	}
 	const unsub = nick.subscribe((value) => {
 		test = value;
 		nickName = value;
@@ -27,21 +31,11 @@
 		// 	player.update((player) => player = data);
 		// 	console.log('player updated' + player);
 		// })
-		goto("/solo");
-
+		goto('/solo');
 	}
 
 	onDestroy(unsub);
 </script>
-
-<script context="module">
-	export async function load({ fetch, session }) {
-	  return {
-		status: 301,
-		redirect: '/solo'
-	  };
-	}
-  </script>
 
 <div class="container">
 	<div class="nick-div">
@@ -70,7 +64,6 @@
 			</a>
 		</div>
 	{/if} -->
-
 </div>
 
 <style>
@@ -120,7 +113,7 @@
 		padding-left: 8px;
 		width: 30vw;
 		background-color: white;
-		color:var(--darkBackground);
+		color: var(--darkBackground);
 	}
 
 	.nick-input:focus {
