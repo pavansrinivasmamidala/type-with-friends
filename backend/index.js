@@ -1,16 +1,19 @@
 /* eslint-disable no-unused-vars */
-const express = require('express');
+import express from 'express';
 
-const Game = require('./schemas/Game');
-const Player = require('./schemas/Player');
+import Game from './schemas/Game.js';
+import Player from './schemas/Player.js';
+import createNewGame from './utils/create-new-game.js';
+import createNewPlayer from './utils/create-new-player.js';
 const app = express();
-const http = require('http');
-const server = http.createServer(app);
-const mongoose = require('mongoose');
+import { createServer } from 'http';
+const server = createServer(app);
+import mongoose from 'mongoose';
+
 server.listen(3001);
-const { Server } = require('socket.io');
+import { Server } from 'socket.io';
 const uri =
-	'mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.5.4';
+	'mongodb://127.0.0.1:27017/typesmash?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.5.4';
 
 mongoose.connect(
 	uri,
@@ -36,11 +39,12 @@ io.on('connection', (socket) => {
 	socket.on('new-player', async (data) => {
 		console.log('adding a new player');
 
-		let player = new Player();
+		let player = await createNewPlayer(data);
 
-		player.nickName = data.nickName;
-		player.isPartyLeader = data.partyLeader;
-		player.save((err, player) => {
+		player.nickName = data?.nickName;
+		player.isPartyLeader = data?.partyLeader;
+		player.socketId = data?.socketId;
+		player?.save((err, player) => {
 			if (err) console.err(err);
 			else {
 				console.log(player);
@@ -50,57 +54,71 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('new-game', async (data) => {
-		let game = new Game();
+		let game = await createNewGame();
 
-		console.log(data);
+		console.log('new game', data);
+		// if (mongoose.Types.ObjectId.isValid(data)) {
+		game.playerIds?.push(data.playerId);
+		// } else {
+		// console.error('Invalid ObjectId:', data);
+		// Handle the error, e.g., send an error message back to the client
+		// socket.emit('error', 'Invalid player ID');
+		// return;
+		// }
 
-		game.players.push(data);
+		// game.players.push(data);
 
-		game.save(async (err, game) => {
-			if (err) console.err(err);
+		console.log('game is created', game);
+
+		game?.save(async (err, game) => {
+			if (err) console.error(err);
 			else {
-				console.log(game);
+				console.log('game created', game);
 				socket.emit('game-created', game);
 			}
 		});
 	});
 
-	socket.on('get-players', async (data) => {
-		const game = await Game.findById(data.gameId).exec();
+	// socket.on('get-players', async (data) => {
+	// 	const game = await Game.findOne({ gameId: data.gameId }).exec();
 
-		const players = await Promise.all(
-			game.players.map(async (playerId) => {
-				const player = await Player.findById(playerId).exec();
-				return player;
-			})
-		);
-		console.log('found players:', players);
+	// 	if (!game) {
+	// 		console.error('Game not found');
+	// 		socket.emit('error', 'Game not found');
+	// 		return;
+	// 	}
 
-		socket.emit('players', players);
-	});
+	// 	const players = await Promise.all(
+	// 		game.players.map(async (playerId) => {
+	// 			const player = await findById(playerId).exec();
+	// 			return player;
+	// 		})
+	// 	);
+	// 	console.log('found players:', players);
 
-	socket.on('message', async (data) => {
-		console.log('message event is emitted');
-		console.log(data);
+	// 	socket.emit('players', players);
+	// });
 
-		Game.findOneAndUpdate(
-			{
-				_id: data.gameId
-			},
-			{ $push: { chat: { playerId: data.playerId, playerNick: data.playerNick, message: data.message } } },
-			{ new: true },
-			(err, result) => {
-				if (err) console.error(err);
-				else {
-					console.log('updated game ', result);
-					socket.emit('message', result.chat);
-				}
-			}
-		);
-		//game.chat.push({playerId: data.playerId, message: data.message});
+	// socket.on('message', async (data) => {
+	// 	console.log('message event is emitted');
+	// 	console.log(data);
 
-		//game = await game.save();
-	});
+	// 	findOneAndUpdate(
+	// 		{ gameId: data.gameId },
+	// 		{ $push: { chat: { playerId: data.playerId, playerNick: data.playerNick, message: data.message } } },
+	// 		{ new: true },
+	// 		(err, result) => {
+	// 			if (err) console.error(err);
+	// 			else {
+	// 				console.log('updated game ', result);
+	// 				socket.emit('message', result.chat);
+	// 			}
+	// 		}
+	// 	);
+	// 	//game.chat.push({playerId: data.playerId, message: data.message});
+
+	// 	//game = await game.save();
+	// });
 
 	socket.on('disconnect', () => {
 		console.log('user disconnected');

@@ -95,7 +95,7 @@
 	}
 </script>
 
-<!-- svelte feature a window vide selector which calls the 
+<!-- svelte feature a window wide selector which calls the 
 	function when a key is pressed in any part of the window-->
 <svelte:window on:keydown={handleKeydown} />
 

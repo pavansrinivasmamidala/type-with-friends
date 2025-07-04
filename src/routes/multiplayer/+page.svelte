@@ -1,55 +1,97 @@
-<!-- <script>
+<script>
 	// @ts-nocheck
 
 	import { io } from '$lib/realtime';
 	import { onMount } from 'svelte';
 	import play from 'svelte-awesome/icons/play';
 	import { Icon } from 'svelte-awesome';
-	import link from '../lib/icons/link.png';
-	import { nick, game, player } from '../lib/store';
+	import link from '../../lib/icons/link.png';
+	import { nick, game, player, socketId } from '../../lib/store';
 	import { onDestroy } from 'svelte';
 	import Chat from '$lib/chat/chat.svelte';
 	import Tracker from '$lib/tracker/tracker.svelte';
+	import { writable } from 'svelte/store';
+	import { v4 as uuidv4 } from 'uuid'; // Import the uuid library
+	import Modal from '$lib/Modal/Modal.svelte';
+	import { goto } from '$app/navigation';
 
 	let startGame = false;
 	let tooltip = false;
-	let nickName = '';
-	let gameData = {};
-	let playerData = {};
-	nick.subscribe((value) => (nickName = value));
-	game.subscribe((value) => (gameData = value));
-	player.subscribe((value) => (playerData = value));
+	let nickName = $nick;
+	let gameData = $game;
+	let playerData = $player;
+	let id = $socketId;
+
+	// nick.subscribe((value) => (nickName = value));
+	// game.subscribe((value) => (gameData = value));
+	// player.subscribe((value) => (playerData = value));
 	let url = '/h564jg';
 	let tooltipText = 'Click to copy';
+	let isModalOpen = false;
 
 	let players = ['Player 1', 'Player 2', 'Player 3'];
+	function openModal() {
+		isModalOpen = true;
+	}
+
+	function closeModal() {
+		isModalOpen = false;
+	}
 
 	onMount(() => {
-		player.subscribe((value) => {
-			io.emit('new-game', value);
-			console.log(value);
-		});
-		io.on('game-created', (data) => {
-			game.update((game) => (game = data));
-			console.log(data);
-			io.emit('get-players', {gameId: data._id});
-		});
-		
-		io.on('players', (data) => {
-			console.log('this is the players data');
-			console.log(data);
-			players = data;
-		});
+		console.log('nickName', nickName);
+		if (!nickName) {
+			goto('/');
+		} else {
+			console.log('id', id);
+			// openModal();
+
+			// io.emit('new-player', {
+			// 	nickName: nickName,
+			// 	partyLeader: true,
+			// 	socketId: id
+			// });
+			const unsubscribe = player.subscribe((value) => {
+				io.emit('new-game', { playerId: value.playerId });
+				console.log(value);
+			});
+			
+
+			io.on('connect_error', (error) => {
+				console.error('Socket connection error:', error);
+			});
+
+			io.on('game-created', (data) => {
+				game.update((game) => (game = data));
+				console.log('game created', data);
+				io.emit('get-players', { gameId: data._id });
+			});
+
+			io.on('players', (data) => {
+				console.log('this is the players data');
+				console.log(data);
+				players = data;
+			});
+
+			return () => {
+				unsubscribe();
+				io.off('game-created');
+				io.off('players');
+				io.off('connect_error');
+			};
+		}
 	});
 
 	function copy() {
 		navigator.clipboard.writeText(url.slice(1));
 		tooltipText = 'Copied!';
 	}
-
 </script>
 
 <div class="container">
+	<Modal isOpen={isModalOpen} close={closeModal}>
+		<h1>Hello just to check if the modal is working</h1>
+	</Modal>
 	{#if startGame}
 		<div>
 			<Tracker />
@@ -69,8 +111,8 @@
 			<div class="margin-bottom-30">
 				<span class="owner-name">{nickName ? nickName : 'Owner'}'s lobby</span>
 			</div>
-			 <button 
-			on:click={() => socketFunction()}> click</button> 
+			<!-- <button 
+			on:click={() => socketFunction()}> click</button>  -->
 			<Chat />
 		</div>
 
@@ -94,7 +136,7 @@
 					{#each players as player}
 						<div class="player">
 							<p class="profile" />
-							<span class="player-name">{player.nickName}</span>
+							<span class="player-name">{player}</span>
 						</div>
 					{/each}
 				</div>
@@ -109,6 +151,21 @@
 		</div>
 	{/if}
 </div>
+
+<!-- 
+<span class="coming-soon"> Multiplayer Coming soon..!!</span>
+
+<style>
+	.coming-soon{
+		font-size: xx-large;
+		font-weight: 600;
+		padding-top: 200px;
+		text-align: center;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+</style> -->
 
 <style>
 	.container {
@@ -246,20 +303,5 @@
 
 	:global(body.dark-mode) .player-name {
 		color: white;
-	}
-</style> -->
-
-
-<span class="coming-soon"> Multiplayer Coming soon..!!</span>
-
-<style>
-	.coming-soon{
-		font-size: xx-large;
-		font-weight: 600;
-		padding-top: 200px;
-		text-align: center;
-		display: flex;
-		justify-content: center;
-		align-items: center;
 	}
 </style>

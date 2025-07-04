@@ -42,6 +42,10 @@
 		margin: auto;
 		max-width: 55vw;
 		justify-content: space-between;
+		position: fixed;
+		bottom: 40px;
+		left: 0;
+		right: 0;
 	}
 
 	.btn {

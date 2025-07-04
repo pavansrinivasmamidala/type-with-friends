@@ -31,8 +31,8 @@
 
 		text = '';
 		io.emit('message', {
-			gameId: gameData._id,
-			playerId: playerData._id,
+			gameId: gameData.gameId,
+			playerId: playerData.playerId,
 			playerNick: playerData.nickName,
 			message: msg
 		});

@@ -8,30 +8,27 @@
 	import { nick, player } from '../lib/store.js';
 	import { onDestroy } from 'svelte';
 	import { io } from '$lib/realtime';
+	import { socketId } from '$lib/store';
 	import { redirect } from '@sveltejs/kit';
 	import { goto } from '$app/navigation';
+
+	const id = $socketId;
 	let nickName = '';
-	let test = '';
+	const playerData = $player;
 
-	export function load() {
-		throw redirect(301, '/solo');
-	}
-	const unsub = nick.subscribe((value) => {
-		test = value;
-		nickName = value;
-	});
-
-	function appendNick() {
-		nick.update((nick) => (nick = nickName));
-		// io.emit('new-player',{
-		// 	nickName: nickName,
-		// 	partyLeader: true
-		// })
-		// io.on('new-player',async (data) => {
-		// 	player.update((player) => player = data);
-		// 	console.log('player updated' + player);
-		// })
-		goto('/solo');
+	function appendNick(data) {
+		if (!playerData) {
+			io.emit('new-player', {
+				nickName: nickName,
+				partyLeader: true,
+				socketId: id
+			});
+			io.on('new-player', async (data) => {
+				player.update((player) => (player = data));
+				console.log('player updated', player);
+			});
+			goto('/solo');
+		}
 	}
 
 	onDestroy(unsub);
@@ -39,31 +36,35 @@
 
 <div class="container">
 	<div class="nick-div">
-		<form on:submit|preventDefault={() => appendNick()}>
+		<form on:submit|preventDefault={(data) => appendNick(data)}>
 			<!-- svelte-ignore a11y-autofocus -->
 			<input
 				type="text"
 				autofocus
-				disabled={test}
 				bind:value={nickName}
 				class="nick-input"
-				placeholder="Enter nick name"
-			/><button class="arrow-icon" on:click={() => appendNick()}>
+				placeholder="Enter name"
+			/>
+			<!-- <button class="arrow-icon" type="submit">
 				<Icon data={arrowRight} scale={1.2} style="color: white;" />
-			</button>
+			</button> -->
 		</form>
 	</div>
-	<!-- {#if test}
-		<div class="buttons">
+
+	<div class="buttons">
+		<div class="icon-button-container">
 			<a class="icon-button" href="/solo">
 				<Icon data={user} scale={10} style="color:var(--lightTextColor)" />
 			</a>
-
+			<span class="icon-under-text">Solo</span>
+		</div>
+		<div class="icon-button-container">
 			<a href="/multiplayer" class="icon-button">
 				<Icon data={users} scale={10} style="color:var(--lightTextColor);" />
 			</a>
+			<span class="icon-under-text">Multiplayer</span>
 		</div>
-	{/if} -->
+	</div>
 </div>
 
 <style>
@@ -73,6 +74,7 @@
 		align-items: center;
 		height: 80%;
 		flex-direction: column;
+		margin-top: 100px;
 	}
 
 	.buttons {
@@ -81,6 +83,12 @@
 		align-items: center;
 		width: 45vw;
 		margin-top: 40px;
+	}
+
+	.icon-button-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 	.icon-button {
 		background-color: white;
@@ -97,6 +105,19 @@
 
 	.icon-button:hover {
 		background-color: var(--darkBackground);
+	}
+
+	.icon-under-text {
+		color: var(--darkBackground);
+		padding: 15px;
+		font-weight: 600;
+		font-size: 30px;
+		border-radius: 10px;
+		text-decoration: none;
+		cursor: pointer;
+		text-align: center;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+			'Open Sans', 'Helvetica Neue', sans-serif;
 	}
 
 	.nick-div {

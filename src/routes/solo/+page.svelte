@@ -7,7 +7,6 @@
 	import { nick } from '$lib/store.js';
 	import { onDestroy } from 'svelte';
 
-
 	let nickName = '';
 
 	const unsub = nick.subscribe((value) => (nickName = value));
@@ -36,7 +35,6 @@
 			main.push(letter);
 		});
 	});
-
 
 	// checks if the entered character is a character or not
 	function isCharALetter(char) {
@@ -216,7 +214,7 @@
 	}
 
 	.letter {
-		font-size: 1.5rem;
+		font-size: 1.7rem;
 		line-height: 1.4rem;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 			'Open Sans', 'Helvetica Neue', sans-serif;

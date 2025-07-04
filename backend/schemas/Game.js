@@ -1,19 +1,17 @@
 /* eslint-disable no-unused-vars */
-const mongoose = require('mongoose');
-const Player = require('./Player');
-
+import mongoose from 'mongoose';
+import Player from './Player.js';
 
 const GameSchema = new mongoose.Schema({
+	gameId: { type: String, required: true }, // Add this line
+
 	words: [{ type: String }],
 	isOpen: { type: Boolean, default: true },
 	isOver: { type: Boolean, default: false },
-	players: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Player'
-    }],
+	playerIds: [{ type: String }],
 	chat: [
 		{
-			playerId: { type: mongoose.Types.ObjectId },
+			playerId: { type: String, required: true },
 			playerNick: {type: String},
 			message: { type: String }
 		}
@@ -22,4 +20,4 @@ const GameSchema = new mongoose.Schema({
 	endTime: Date
 });
 
-module.exports = mongoose.model('Game', GameSchema);
+export default mongoose.model('Game', GameSchema);
