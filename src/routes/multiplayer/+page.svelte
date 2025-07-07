@@ -14,6 +14,7 @@
 	import { v4 as uuidv4 } from 'uuid'; // Import the uuid library
 	import Modal from '$lib/Modal/Modal.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	let startGame = false;
 	let tooltip = false;
@@ -29,7 +30,7 @@
 	let tooltipText = 'Click to copy';
 	let isModalOpen = false;
 
-	let players = ['Player 1', 'Player 2', 'Player 3'];
+	let players = [];
 	function openModal() {
 		isModalOpen = true;
 	}
@@ -44,28 +45,35 @@
 			goto('/');
 		} else {
 			console.log('id', id);
-			// openModal();
 
-			// io.emit('new-player', {
-			// 	nickName: nickName,
-			// 	partyLeader: true,
-			// 	socketId: id
-			// });
-			const unsubscribe = player.subscribe((value) => {
-				io.emit('new-game', { playerId: value.playerId });
-				console.log(value);
-			});
-			
+			const gameId = $page.params.gameId; // Get the gameId from the URL
+			if (gameId) {
+				const unsubscribePage = page.subscribe(($page) => {
+					io.emit('join-game', { gameId, playerId: playerData.playerId });
+				});
 
-			io.on('connect_error', (error) => {
-				console.error('Socket connection error:', error);
-			});
+				io.on('joined-game', (data) => {
+					game.set(data);
+					console.log('joined game', gameData, data);
+					// io.emit('get-players', { gameId: data._id });
+					io.emit('get-players', { gameId: gameId });
+				});
+			} else {
+				const unsubscribe = player.subscribe((value) => {
+					io.emit('new-game', { playerId: value.playerId });
+					console.log(value);
+				});
 
-			io.on('game-created', (data) => {
-				game.update((game) => (game = data));
-				console.log('game created', data);
-				io.emit('get-players', { gameId: data._id });
-			});
+				io.on('connect_error', (error) => {
+					console.error('Socket connection error:', error);
+				});
+
+				io.on('game-created', (data) => {
+					game.set(data);
+					console.log('game created', gameData, data);
+					io.emit('get-players', { gameId: data._id });
+				});
+			}
 
 			io.on('players', (data) => {
 				console.log('this is the players data');
@@ -75,9 +83,11 @@
 
 			return () => {
 				unsubscribe();
+				unsubscribePage();
 				io.off('game-created');
 				io.off('players');
 				io.off('connect_error');
+				io.off('joined-game');
 			};
 		}
 	});
@@ -109,7 +119,7 @@
 	{:else}
 		<div class="game-info">
 			<div class="margin-bottom-30">
-				<span class="owner-name">{nickName ? nickName : 'Owner'}'s lobby</span>
+				<span class="owner-name"> Player 1's lobby</span>
 			</div>
 			<!-- <button 
 			on:click={() => socketFunction()}> click</button>  -->

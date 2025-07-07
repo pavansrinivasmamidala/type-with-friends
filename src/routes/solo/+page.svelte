@@ -1,10 +1,10 @@
 <script>
 	// @ts-nocheck
-	import { wordsArray, response } from '$lib/store.js';
+	import { wordsArray, response } from '$lib/store';
 	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
-	import { nick } from '$lib/store.js';
+	import { nick } from '$lib/store';
 	import { onDestroy } from 'svelte';
 
 	let nickName = '';
@@ -20,6 +20,7 @@
 	let timerRunning = false;
 	let isCompleted = false;
 	let showStats = false;
+	let refreshButton; // Add this reference
 
 	// creating a new array based on the words array
 	// which includes spaces as a letter and each word
@@ -58,6 +59,15 @@
 	// before doing anything
 	function handleKeydown(event) {
 		console.log(wordsArray);
+
+		// Handle Tab key to focus on restart button
+		if (event.key === 'Tab') {
+			event.preventDefault(); // Prevent default Tab behavior
+			if (refreshButton) {
+				refreshButton.focus();
+			}
+			return;
+		}
 
 		// check these before starting the timer
 		if (!timerRunning && isCharALetter(event.key) && !isCompleted) {
@@ -103,12 +113,19 @@
 		<span class:invisible={!timerRunning} class="timer">{timer}</span>
 	</div>
 
+	{#if !timerRunning && !isCompleted}
+	<div >
+		<span class="start-text"
+			>Start typing whenever you're ready <span class="pulse">•</span><span class="pulse">•</span
+			><span class="pulse">•</span>
+		</span>
+	</div>
+	{/if}
+
 	<!-- show the speed after the test completed -->
 	{#if isCompleted}
 		<div>
-			<span class="speed"
-				>{isCompleted ? `${Math.trunc(main.length / ((timer + 1) / 12))} WPM` : ''}</span
-			>
+			<span class="speed">{`${Math.trunc(main.length / ((timer + 1) / 12))} WPM`}</span>
 		</div>
 	{/if}
 	<!-- div which displays the letters -->
@@ -125,8 +142,30 @@
 		{/each}
 	</div>
 
+	<!-- on-screen keyboard replica -->
+	<div class="keyboard">
+		<div class="row first">
+			{#each ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']'] as key}
+				<span class="key" class:highlight={key === main[index]}>{key}</span>
+			{/each}
+		</div>
+		<div class="row second">
+			{#each ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '"'] as key}
+				<span class="key" class:highlight={key === main[index]}>{key}</span>
+			{/each}
+		</div>
+		<div class="row third">
+			{#each ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'] as key}
+				<span class="key" class:highlight={key === main[index]}>{key}</span>
+			{/each}
+		</div>
+		<div class="row space-row">
+			<span class="key space" class:highlight={main[index] === ' '}>qwerty</span>
+		</div>
+	</div>
+
 	<div>
-		<button class="refresh" onclick="location.reload()">
+		<button data-tooltip="Click to Restart" bind:this={refreshButton} class="refresh" onclick="location.reload()">
 			<Icon data={rotateRight} scale="1.5" style="color:var(--lightTextColor)" />
 		</button>
 	</div>
@@ -147,7 +186,7 @@
 			'Open Sans', 'Helvetica Neue', sans-serif;
 	}
 	.words {
-		margin-top: 40px;
+		margin-top: 10px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -165,16 +204,15 @@
 		margin-top: 30px;
 		border: none;
 		background-color: white;
-		padding: 5px;
 		cursor: pointer;
 		transition: 0.5s ease-in-out;
+		border-radius: 10px;
+		padding-top: 5px;
 	}
 
 	.refresh:focus-visible {
 		outline: none;
 		background-color: var(--darkBackground);
-		border-radius: 10px;
-		padding-bottom: 0px;
 	}
 
 	p {
@@ -214,7 +252,7 @@
 	}
 
 	.letter {
-		font-size: 1.7rem;
+		font-size: 32px;
 		line-height: 1.4rem;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 			'Open Sans', 'Helvetica Neue', sans-serif;
@@ -238,15 +276,39 @@
 		}
 	}
 
+	.start-text {
+		font-size: 1.5rem;
+		font-weight: 300;
+		color: var(--lightTextColor);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.pulse {
+		animation: pulse 2s infinite;
+		font-size: 2rem;
+		color: var(--lightTextColor);
+	}
+
+	@keyframes pulse {
+		50% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 1;
+		}
+	}
+
 	.invisible {
 		visibility: hidden;
 	}
 
 	.speed {
-		font-size: 30px;
-		font-weight: 700;
+		font-size: 4rem;
+		font-weight: 500;
 		line-height: large;
-		color: var(--lightTextColor);
+		color: var(--darkBackground);
 	}
 
 	.timer {
@@ -259,5 +321,71 @@
 		font-size: 13px;
 		visibility: visible;
 		margin-top: 20px;
+	}
+
+	.keyboard {
+		font-size: 1rem;
+		display: grid;
+		grid-template-rows: 1fr 1fr 1fr;
+		justify-content: center;
+		white-space: nowrap;
+		gap: 0.25rem;
+		margin-top: 1rem;
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		user-select: none;
+	}
+
+	.row {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	
+
+	.key {
+		justify-content: center;
+		align-items: center;
+		margin: 2px;
+		background-color: #ddeff3;
+		cursor: default;
+		font-size: 1rem;
+		user-select: none;
+		color: var(--lightTextColor);
+		height: 2rem;
+		width: 2rem;
+		display: flex;
+		border-radius: 8px;
+	}
+
+	:global(body.dark-mode) .key {
+		background-color: var(--lightTextColor);
+		color: var(--darkBackground);
+	}
+
+	.key:hover {
+		background-color: #bfe4f2;
+	}
+
+	.highlight {
+		background-color: var(--darkBackground);
+	}
+
+	:global(body.dark-mode) .highlight {
+		background-color: var(--lightBackground);
+		color: var(--darkTextColor);
+	}
+
+	.space {
+		background-color: #d9f3fa;
+		height: 2rem;
+		border-radius: 6px;
+		min-width: 330px;
+		user-select: none;
+	}
+
+	.space:hover {
+		background-color: #bfe4f2;
 	}
 </style>

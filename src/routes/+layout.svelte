@@ -1,14 +1,18 @@
 <script>
 	import Header from './header.svelte';
 	import Footer from './footer.svelte';
+	import ConnectionStatus from '$lib/ConnectionStatus.svelte';
+	import { page } from '$app/stores';
 </script>
 
 <header>
 	<Header />
 </header>
 
-<main>
+<main class="card">
+	{#key $page.url.pathname}
 	<slot />
+	{/key}
 </main>
 
 <footer>
@@ -20,6 +24,10 @@
 		max-width: 80vw;
 		margin: auto;
 		height: 80vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
 	}
 
 	:global(body) {

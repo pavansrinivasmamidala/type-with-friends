@@ -1,18 +1,10 @@
 <script>
 	// @ts-nocheck
-	import { wordsArray, response } from '../lib/store.js';
+	import { wordsArray, response } from '../lib/store';
 	import words from './solo/words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
-	import { nick } from '../lib/store.js';
-	import { onDestroy } from 'svelte';
 
-
-	let nickName = '';
-
-	const unsub = nick.subscribe((value) => (nickName = value));
-
-	onDestroy(unsub);
 
 	let main = [];
 	let index = 0;
@@ -245,10 +237,10 @@
 	}
 
 	.speed {
-		font-size: 30px;
+		font-size: 60px;
 		font-weight: 700;
 		line-height: large;
-		color: var(--lightTextColor);
+		color: var(--darkBackground);
 	}
 
 	.timer {

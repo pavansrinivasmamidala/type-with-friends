@@ -5,64 +5,96 @@
 	import user from 'svelte-awesome/icons/user';
 	import users from 'svelte-awesome/icons/users';
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
-	import { nick, player } from '../lib/store.js';
+	import { nick, player } from '../lib/store';
 	import { onDestroy } from 'svelte';
-	import { io } from '$lib/realtime';
+	import { io, waitForSocketConnection } from '$lib/realtime';
 	import { socketId } from '$lib/store';
 	import { redirect } from '@sveltejs/kit';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { browserStorage } from '$lib/browser-storage';
 
-	const id = $socketId;
-	let nickName = '';
-	const playerData = $player;
-
-	function appendNick(data) {
-		if (!playerData) {
+	onMount(async () => {
+		console.log('Home page mounted');
+		
+		// Wait for socket connection before proceeding
+		const currentSocketId = await waitForSocketConnection();
+		console.log('Socket connected with ID:', currentSocketId);
+		
+		// Check if player exists in browser storage
+		const storedPlayer = browserStorage.getPlayer();
+		
+		if (storedPlayer && Object.keys(storedPlayer).length > 0) {
+			console.log('Found existing player in storage:', storedPlayer);
+			
+			// Update socket ID if it's different
+			if (storedPlayer.socketId !== currentSocketId) {
+				console.log('Updating stored player socket ID from', storedPlayer.socketId, 'to', currentSocketId);
+				storedPlayer.socketId = currentSocketId;
+				browserStorage.setPlayer(storedPlayer);
+				
+				// Update socket ID in database
+				io.emit('update-socket-id', {
+					playerId: storedPlayer.playerId,
+					socketId: currentSocketId
+				});
+			}
+			
+			// Update stores with stored data
+			player.set(storedPlayer);
+			nick.set(storedPlayer.nickName);
+		} else {
+			console.log('No stored player found, creating new player');
+			// Create new player only if none exists
 			io.emit('new-player', {
-				nickName: nickName,
 				partyLeader: true,
-				socketId: id
+				socketId: $socketId // Use the actual socket ID
 			});
 			io.on('new-player', async (data) => {
-				player.update((player) => (player = data));
-				console.log('player updated', player);
+				player.set(data); // This will automatically save to storage
+				nick.set(data.nickName);
+				console.log('New player created and stored:', data);
 			});
-			goto('/solo');
 		}
+	});
+
+	// Function to handle multiplayer click
+	function handleMultiplayerClick() {
+		// Create a new game
+		io.emit('new-game', { playerId: $player.playerId });
+		
+		// Listen for game creation response
+		io.on('game-created', (data) => {
+			console.log('Game created:', data);
+			// Redirect to the new game
+			goto(`/multiplayer/${data.gameId}`);
+		});
 	}
 
-	onDestroy(unsub);
+	// onDestroy(unsub);
 </script>
 
 <div class="container">
 	<div class="nick-div">
-		<form on:submit|preventDefault={(data) => appendNick(data)}>
-			<!-- svelte-ignore a11y-autofocus -->
-			<input
-				type="text"
-				autofocus
-				bind:value={nickName}
-				class="nick-input"
-				placeholder="Enter name"
-			/>
-			<!-- <button class="arrow-icon" type="submit">
-				<Icon data={arrowRight} scale={1.2} style="color: white;" />
-			</button> -->
-		</form>
+		<span class="nick-title">Welcome to the game!</span>
+		<span class="nick-name">{$player.nickName}</span>
+		<!-- svelte-ignore a11y-autofocus -->
+		<!-- <input type="text" autofocus bind:value={$nick} class="nick-input" placeholder="Enter name" /> -->
 	</div>
 
+	<span class="pick-text">Pick a mode</span>
 	<div class="buttons">
 		<div class="icon-button-container">
 			<a class="icon-button" href="/solo">
 				<Icon data={user} scale={10} style="color:var(--lightTextColor)" />
 			</a>
-			<span class="icon-under-text">Solo</span>
+			<span class="icon-under-text">Single Player</span>
 		</div>
 		<div class="icon-button-container">
-			<a href="/multiplayer" class="icon-button">
+			<button class="icon-button" on:click={handleMultiplayerClick}>
 				<Icon data={users} scale={10} style="color:var(--lightTextColor);" />
-			</a>
-			<span class="icon-under-text">Multiplayer</span>
+			</button>
+			<span class="icon-under-text">Multi Player</span>
 		</div>
 	</div>
 </div>
@@ -74,7 +106,6 @@
 		align-items: center;
 		height: 80%;
 		flex-direction: column;
-		margin-top: 100px;
 	}
 
 	.buttons {
@@ -101,6 +132,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: 0;
 	}
 
 	.icon-button:hover {
@@ -124,6 +156,26 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		flex-direction: column;
+		margin-bottom: 40px;
+	}
+
+	.nick-title {
+		font-size: 28px;
+		font-weight: 600;
+		color: var(--darkBackground);
+	}
+
+	.nick-name {
+		font-size: 40px;
+		font-weight: 600;
+		color: var(--lightTextColor);
+	}
+
+	.pick-text {
+		font-size: 40px;
+		font-weight: 600;
+		color: var(--darkBackground);
 	}
 
 	.nick-input {
@@ -149,6 +201,22 @@
 		padding: 10px 12px;
 		margin-left: 8px;
 		cursor: pointer;
+	}
+
+	:global(body.dark-mode) .nick-title {
+		color: white;
+	}
+
+	:global(body.dark-mode) .nick-name {
+		color: var(--darkTextColor);
+	}
+
+	:global(body.dark-mode) .pick-text {
+		color: white;
+	}
+
+	:global(body.dark-mode) .icon-under-text {
+		color: white;
 	}
 
 	:global(body.dark-mode) .icon-button {

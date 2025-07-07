@@ -2,53 +2,182 @@
 	// @ts-nocheck
 
 	import { io } from '$lib/realtime';
-	import { onMount } from 'svelte';
-	import { nick, game, player } from '../store';
+	import { onMount, onDestroy } from 'svelte';
+	import { nick, game, player, messages } from '../store';
 
 	let text = '';
-	let messages = [];
-	let gameData = {};
-	let playerData = {};
+	let chatContainer;
 
-	onMount(() => {});
+	onMount(() => {
+		console.log('Chat component mounted');
+		console.log('Socket connected:', io?.connected);
+		console.log('Game data:', $game);
+		console.log('Player data:', $player);
 
-	io.on('message', (message) => {
-		messages = [...message];
-		console.log(messages);
+		// Initialize messages from game data if available
+		if ($game && $game.chat) {
+			console.log('Initializing messages from game data:', $game.chat);
+			messages.set([...$game.chat]);
+		}
+
+		// Listen for new messages
+		io.on('get-messages', (messageData) => {
+			console.log('New message received:', messageData);
+			console.log('Current messages before update:', $messages);
+			
+			// Check if this message is already in the store (to avoid duplicates)
+			const messageExists = $messages.some(msg => 
+				msg.playerId === messageData.playerId && 
+				msg.message === messageData.message && 
+				msg.timestamp === messageData.timestamp
+			);
+			
+			if (!messageExists) {
+				messages.update(msgs => {
+					const newMessages = [...msgs, messageData];
+					console.log('Updated messages:', newMessages);
+					return newMessages;
+				});
+			}
+			
+			// Auto-scroll to bottom
+			setTimeout(() => {
+				if (chatContainer) {
+					chatContainer.scrollTop = chatContainer.scrollHeight;
+				}
+			}, 100);
+		});
+
+		// Listen for game updates (when joining)
+		io.on('joined-game', (gameData) => {
+			console.log('Joined game, loading chat history:', gameData);
+			if (gameData.chat && Array.isArray(gameData.chat)) {
+				messages.set([...gameData.chat]);
+			}
+		});
+
+		// Debug: Check if socket is connected
+		if (!io?.connected) {
+			console.warn('Socket not connected when chat component mounted');
+		}
 	});
 
-	let nickName = '';
-	nick.subscribe((value) => (nickName = value));
-	game.subscribe((value) => (gameData = value));
-	player.subscribe((value) => (playerData = value));
+	onDestroy(() => {
+		console.log('Chat component destroying, cleaning up listeners');
+		// Clean up listeners
+		io.off('get-messages');
+		io.off('joined-game');
+	});
 
 	function sendMessage() {
 		const msg = text.trim();
 		if (!msg) return;
 
-		console.log(gameData);
-		console.log(playerData);
+		// Validate required data
+		if (!$game || !$game.gameId) {
+			console.error('No game data available');
+			return;
+		}
 
+		if (!$player || !$player.playerId) {
+			console.error('No player data available');
+			return;
+		}
+
+		if (!io?.connected) {
+			console.error('Socket not connected');
+			return;
+		}
+
+		const messageData = {
+			gameId: $game.gameId,
+			playerId: $player.playerId,
+			playerNick: $player.nickName,
+			message: msg,
+			timestamp: new Date().toISOString()
+		};
+
+		console.log('Sending message:', messageData);
+		
+		// Clear input immediately for better UX
 		text = '';
-		io.emit('message', {
-			gameId: gameData.gameId,
-			playerId: playerData.playerId,
-			playerNick: playerData.nickName,
-			message: msg
+		
+		// Add message optimistically to the store immediately
+		messages.update(msgs => {
+			const newMessages = [...msgs, messageData];
+			console.log('Added message optimistically:', newMessages);
+			return newMessages;
 		});
+		
+		// Auto-scroll to bottom immediately
+		setTimeout(() => {
+			if (chatContainer) {
+				chatContainer.scrollTop = chatContainer.scrollHeight;
+			}
+		}, 50);
+		
+		// Emit message to server
+		io.emit('send-message', messageData);
+	}
+
+	function handleKeyPress(event) {
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
+			sendMessage();
+		}
+	}
+
+	// Format timestamp for display
+	function formatTime(timestamp) {
+		if (!timestamp) return '';
+		const date = new Date(timestamp);
+		return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	}
+
+	// Check if message is from current player
+	function isOwnMessage(message) {
+		return message.playerId === $player?.playerId;
 	}
 </script>
 
 <div class="chat-window">
-	<div>
-		{#each messages as message}
-			<p>{message ? message.message : ''}</p>
-		{/each}
+	<div class="messages-container" bind:this={chatContainer}>
+		{#if $messages.length === 0}
+			<div class="no-messages">
+				<p>No messages yet. Start the conversation!</p>
+			</div>
+		{:else}
+			{#each $messages as message, index}
+				<div class="message {isOwnMessage(message) ? 'own-message' : 'other-message'}">
+					<div class="message-header">
+						<span class="player-name">{message.playerNick || 'Anonymous'}</span>
+						<span class="timestamp">{formatTime(message.timestamp)}</span>
+					</div>
+					<div class="message-content">
+						{message.message}
+					</div>
+				</div>
+			{/each}
+		{/if}
 	</div>
-	<div class="input-div">
-		<input type="text" class="chat-input" bind:value={text} />
-		<button class="send-button" on:click={sendMessage}>send</button>
-	</div>
+	
+	<form class="input-div" on:submit|preventDefault={sendMessage}>
+		<input 
+			type="text" 
+			class="chat-input" 
+			bind:value={text} 
+			on:keypress={handleKeyPress}
+			placeholder="Type your message..."
+			maxlength="500"
+		/>
+		<button 
+			type="submit" 
+			class="send-button" 
+			disabled={!text.trim()}
+		>
+			Send
+		</button>
+	</form>
 </div>
 
 <style>
@@ -65,56 +194,152 @@
 		position: relative;
 	}
 
+	.messages-container {
+		flex: 1;
+		overflow-y: auto;
+		padding: 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		max-height: calc(45vh - 60px);
+	}
+
+	.no-messages {
+		text-align: center;
+		color: #666;
+		font-style: italic;
+		margin-top: 20px;
+	}
+
+	.message {
+		padding: 8px 12px;
+		border-radius: 12px;
+		max-width: 80%;
+		word-wrap: break-word;
+	}
+
+	.own-message {
+		align-self: flex-end;
+		background-color: var(--lightTextColor);
+		color: white;
+	}
+
+	.other-message {
+		align-self: flex-start;
+		background-color: #f0f0f0;
+		color: var(--darkBackground);
+	}
+
+	.message-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 4px;
+		font-size: 12px;
+		opacity: 0.8;
+		gap: 10px;
+	}
+
+	.player-name {
+		font-weight: bold;
+	}
+
+	.timestamp {
+		font-size: 10px;
+	}
+
+	.message-content {
+		font-size: 14px;
+		line-height: 1.4;
+	}
+
 	.input-div {
 		display: flex;
-		justify-content: flex-end;
-		align-items: flex-start;
-	}
-	.chat-input {
-		width: 85%;
+		justify-content: space-between;
+		align-items: center;
+		padding: 10px;
 		border-top: 2px var(--darkBackground) solid;
-		border-right: 2px var(--darkBackground) solid;
-		border-left: none;
-		border-bottom: none;
-		border-radius: 4px;
-		height: 4vh;
-		font-size: 22px;
-		color: var(--darkBackground);
-		background: none;
-		box-shadow: none;
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		padding-left: 4px;
+		background-color: white;
+		border-radius: 0 0 8px 8px;
+	}
+
+	.chat-input {
+		flex: 1;
+		border: none;
+		outline: none;
+		font-size: 16px;
+		padding: 8px 12px;
+		border-radius: 20px;
+		background-color: #f5f5f5;
+		margin-right: 10px;
 	}
 
 	.chat-input:focus {
-		outline: none;
+		background-color: #e8e8e8;
 	}
 
 	.send-button {
-		width: 12%;
+		padding: 8px 16px;
 		cursor: pointer;
 		color: white;
-		border-radius: 5px;
-		position: absolute;
-		right: 0;
-		bottom: 0;
+		border-radius: 20px;
 		background-color: var(--lightTextColor);
 		border: none;
-		height: 4vh;
-		font-size: 20px;
-		opacity: 0.75;
-		margin: 4px;
+		font-size: 18px;
+		font-weight: normal;
+		transition: opacity 0.2s;
+	}
+
+	.send-button:hover:not(:disabled) {
+		opacity: 0.9;
+	}
+
+	.send-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	/* Dark mode styles */
+	:global(body.dark-mode) .chat-window {
+		border: 2px solid white;
+		background-color: #2a2a2a;
+	}
+
+	:global(body.dark-mode) .other-message {
+		background-color: #404040;
+		color: white;
+	}
+
+	:global(body.dark-mode) .input-div {
+		background-color: #2a2a2a;
+		border-top: 2px solid white;
 	}
 
 	:global(body.dark-mode) .chat-input {
-		border-top: 2px white solid;
-		border-right: 2px white solid;
+		background-color: #404040;
 		color: white;
 	}
 
-	:global(body.dark-mode) .chat-window {
-		border: 2px solid white;
+	:global(body.dark-mode) .chat-input:focus {
+		background-color: #505050;
+	}
+
+	/* Scrollbar styling */
+	.messages-container::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.messages-container::-webkit-scrollbar-track {
+		background: #f1f1f1;
+		border-radius: 3px;
+	}
+
+	.messages-container::-webkit-scrollbar-thumb {
+		background: #c1c1c1;
+		border-radius: 3px;
+	}
+
+	.messages-container::-webkit-scrollbar-thumb:hover {
+		background: #a8a8a8;
 	}
 </style>
