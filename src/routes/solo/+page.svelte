@@ -4,12 +4,14 @@
 	import words from './words.js';
 	import Icon from 'svelte-awesome';
 	import rotateRight from 'svelte-awesome/icons/rotateRight';
-	import { nick } from '$lib/store';
+	import { playerStore } from '$lib/store';
 	import { onDestroy } from 'svelte';
 
 	let nickName = '';
 
-	const unsub = nick.subscribe((value) => (nickName = value));
+	const unsub = playerStore.subscribe((player) => {
+		nickName = player.nickName || '';
+	});
 
 	onDestroy(unsub);
 
@@ -113,14 +115,13 @@
 		<span class:invisible={!timerRunning} class="timer">{timer}</span>
 	</div>
 
-	{#if !timerRunning && !isCompleted}
-	<div >
+	<div class:invisible={timerRunning || isCompleted}>
 		<span class="start-text"
-			>Start typing whenever you're ready <span class="pulse">•</span><span class="pulse">•</span
-			><span class="pulse">•</span>
+			>Start typing whenever you're ready <span class="pulse-1">•</span><span class="pulse-2"
+				>•</span
+			><span class="pulse-3">•</span>
 		</span>
 	</div>
-	{/if}
 
 	<!-- show the speed after the test completed -->
 	{#if isCompleted}
@@ -165,12 +166,19 @@
 	</div>
 
 	<div>
-		<button data-tooltip="Click to Restart" bind:this={refreshButton} class="refresh" onclick="location.reload()">
+		<button
+			data-tooltip="Click to Restart"
+			bind:this={refreshButton}
+			class="refresh"
+			onclick="location.reload()"
+		>
 			<Icon data={rotateRight} scale="1.5" style="color:var(--lightTextColor)" />
 		</button>
 	</div>
 
-	<!-- <span class:info={isCompleted} class="invisible">Tab + Enter to restart</span> -->
+	<div class="info">
+		<span class="tab-key">Tab</span> + <span class="enter-key">Enter</span> to restart
+	</div>
 </div>
 
 <style>
@@ -285,17 +293,55 @@
 		justify-content: center;
 	}
 
-	.pulse {
-		animation: pulse 2s infinite;
+	.pulse-1 {
+		animation: pulse-1 2s infinite;
 		font-size: 2rem;
 		color: var(--lightTextColor);
 	}
 
-	@keyframes pulse {
-		50% {
+	.pulse-2 {
+		animation: pulse-2 2s infinite;
+		font-size: 2rem;
+		color: var(--lightTextColor);
+	}
+
+	.pulse-3 {
+		animation: pulse-3 2s infinite;
+		font-size: 2rem;
+		color: var(--lightTextColor);
+	}
+
+	@keyframes pulse-1 {
+		0%,
+		100% {
 			opacity: 0;
 		}
+		33% {
+			opacity: 1;
+		}
+		66% {
+			opacity: 0;
+		}
+	}
+
+	@keyframes pulse-2 {
+		0%,
+		33% {
+			opacity: 0;
+		}
+		66% {
+			opacity: 1;
+		}
 		100% {
+			opacity: 0;
+		}
+	}
+
+	@keyframes pulse-3 {
+		66% {
+			opacity: 0;
+		}
+		99% {
 			opacity: 1;
 		}
 	}
@@ -342,8 +388,6 @@
 		align-items: center;
 	}
 
-	
-
 	.key {
 		justify-content: center;
 		align-items: center;
@@ -359,10 +403,10 @@
 		border-radius: 8px;
 	}
 
-	:global(body.dark-mode) .key {
-		background-color: var(--lightTextColor);
-		color: var(--darkBackground);
-	}
+	/* :global(body.dark-mode) .key {
+		background-color:#ddeff3;
+		color: var(--lightTextColor);
+	} */
 
 	.key:hover {
 		background-color: #bfe4f2;
@@ -372,11 +416,29 @@
 		background-color: var(--darkBackground);
 	}
 
-	:global(body.dark-mode) .highlight {
-		background-color: var(--lightBackground);
+	/* :global(body.dark-mode) .highlight {
+		background-color: var(--darkBackground);
 		color: var(--darkTextColor);
+	} */
+
+	.info {
+		margin-top: 3rem;
+
+		font-size: 16px;
+	}
+	.tab-key {
+		color: white;
+		background-color: var(--lightTextColor);
+		padding: 2px 5px;
+		border-radius: 5px;
 	}
 
+	.enter-key {
+		color: white;
+		background-color: var(--lightTextColor);
+		padding: 2px 5px;
+		border-radius: 5px;
+	}
 	.space {
 		background-color: #d9f3fa;
 		height: 2rem;

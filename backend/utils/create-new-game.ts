@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import Game, { IGame } from '../schemas/Game'; // Ensure Game schema exports an interface
+import generateId from './generate-id';
 
 interface GameData {
   gameId: string;
@@ -13,7 +14,7 @@ interface GameData {
 const createNewGame = async (): Promise<IGame | undefined> => {
   try {
     // Generate a unique gameId, e.g., using UUID
-    const gameId = uuidv4(); // Ensure you have uuid installed and imported
+    const gameId = generateId(); // Ensure you have uuid installed and imported
 
     // Create a new game instance with explicit initialization
     const newGame = new Game({

@@ -36,7 +36,7 @@
 
 	<a href="https://monkeytype.com" class="monkeytype" target="_blank">
 		<div>
-			<span style="margin-right:6px"> Inspired by </span>
+			<span style="margin-right:6px" class="monkeytype-text"> Inspired by </span>
 		</div>
 		<div style="height: 22px;width:22px;">
 			<svg
@@ -109,6 +109,16 @@
 		border: none;
 		font-size: 18px;
 		display: flex;
+	}
+
+	.monkeytype-text {
+		font-size: 16px;
+		color: var(--darkBackground);
+
+	}
+
+	:global(body.dark-mode) .monkeytype-text {
+		color: white;
 	}
 
 	span {

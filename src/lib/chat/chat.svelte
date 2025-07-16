@@ -1,72 +1,32 @@
 <script>
 	// @ts-nocheck
 
-	import { io } from '$lib/realtime';
 	import { onMount, onDestroy } from 'svelte';
-	import { nick, game, player, messages } from '../store';
-
+	import { playerStore, gameStore, chatStore } from '../store';
+	import { getActiveListeners } from '../realtime';
 	let text = '';
 	let chatContainer;
 
 	onMount(() => {
 		console.log('Chat component mounted');
-		console.log('Socket connected:', io?.connected);
-		console.log('Game data:', $game);
-		console.log('Player data:', $player);
+		console.log('Game data:', $gameStore);
+		console.log('Player data:', $playerStore);
 
 		// Initialize messages from game data if available
-		if ($game && $game.chat) {
-			console.log('Initializing messages from game data:', $game.chat);
-			messages.set([...$game.chat]);
+		if ($gameStore && $gameStore.chat) {
+			console.log('Initializing messages from game data:', $gameStore.chat);
+			chatStore.set($gameStore.chat);
 		}
 
-		// Listen for new messages
-		io.on('get-messages', (messageData) => {
-			console.log('New message received:', messageData);
-			console.log('Current messages before update:', $messages);
-			
-			// Check if this message is already in the store (to avoid duplicates)
-			const messageExists = $messages.some(msg => 
-				msg.playerId === messageData.playerId && 
-				msg.message === messageData.message && 
-				msg.timestamp === messageData.timestamp
-			);
-			
-			if (!messageExists) {
-				messages.update(msgs => {
-					const newMessages = [...msgs, messageData];
-					console.log('Updated messages:', newMessages);
-					return newMessages;
-				});
-			}
-			
-			// Auto-scroll to bottom
-			setTimeout(() => {
-				if (chatContainer) {
-					chatContainer.scrollTop = chatContainer.scrollHeight;
-				}
-			}, 100);
-		});
-
-		// Listen for game updates (when joining)
-		io.on('joined-game', (gameData) => {
-			console.log('Joined game, loading chat history:', gameData);
-			if (gameData.chat && Array.isArray(gameData.chat)) {
-				messages.set([...gameData.chat]);
-			}
-		});
-
-		// Debug: Check if socket is connected
-		if (!io?.connected) {
-			console.warn('Socket not connected when chat component mounted');
+		// Load chat history if we have a game ID
+		if ($gameStore && $gameStore.gameId) {
+			chatStore.loadChatHistory($gameStore.gameId);
 		}
 	});
 
 	onDestroy(() => {
-		console.log('Chat component destroying, cleaning up listeners');
-		// Clean up listeners
-		io.off('get-messages');
-		io.off('joined-game');
+		console.log('Chat component destroying');
+		// No need to clean up listeners as they're handled by the store
 	});
 
 	function sendMessage() {
@@ -74,50 +34,35 @@
 		if (!msg) return;
 
 		// Validate required data
-		if (!$game || !$game.gameId) {
+		if (!$gameStore || !$gameStore.gameId) {
 			console.error('No game data available');
 			return;
 		}
 
-		if (!$player || !$player.playerId) {
+		if (!$playerStore || !$playerStore.playerId) {
 			console.error('No player data available');
 			return;
 		}
 
-		if (!io?.connected) {
-			console.error('Socket not connected');
-			return;
-		}
+		console.log('Sending message:', msg);
 
-		const messageData = {
-			gameId: $game.gameId,
-			playerId: $player.playerId,
-			playerNick: $player.nickName,
-			message: msg,
-			timestamp: new Date().toISOString()
-		};
+		// Use the abstracted method
+		chatStore.sendMessage(
+			$gameStore.gameId,
+			$playerStore.playerId,
+			$playerStore.nickName,
+			msg
+		);
 
-		console.log('Sending message:', messageData);
-		
 		// Clear input immediately for better UX
 		text = '';
-		
-		// Add message optimistically to the store immediately
-		messages.update(msgs => {
-			const newMessages = [...msgs, messageData];
-			console.log('Added message optimistically:', newMessages);
-			return newMessages;
-		});
-		
+
 		// Auto-scroll to bottom immediately
 		setTimeout(() => {
 			if (chatContainer) {
 				chatContainer.scrollTop = chatContainer.scrollHeight;
 			}
 		}, 50);
-		
-		// Emit message to server
-		io.emit('send-message', messageData);
 	}
 
 	function handleKeyPress(event) {
@@ -136,18 +81,22 @@
 
 	// Check if message is from current player
 	function isOwnMessage(message) {
-		return message.playerId === $player?.playerId;
+		return message.playerId === $playerStore?.playerId;
+	}
+
+	function refreshListeners() {
+		getActiveListeners()
 	}
 </script>
 
 <div class="chat-window">
 	<div class="messages-container" bind:this={chatContainer}>
-		{#if $messages.length === 0}
+		{#if $chatStore.length === 0}
 			<div class="no-messages">
 				<p>No messages yet. Start the conversation!</p>
 			</div>
 		{:else}
-			{#each $messages as message, index}
+			{#each $chatStore as message, index}
 				<div class="message {isOwnMessage(message) ? 'own-message' : 'other-message'}">
 					<div class="message-header">
 						<span class="player-name">{message.playerNick || 'Anonymous'}</span>
@@ -160,23 +109,19 @@
 			{/each}
 		{/if}
 	</div>
-	
+
 	<form class="input-div" on:submit|preventDefault={sendMessage}>
-		<input 
-			type="text" 
-			class="chat-input" 
-			bind:value={text} 
+		<input
+			type="text"
+			class="chat-input"
+			bind:value={text}
 			on:keypress={handleKeyPress}
 			placeholder="Type your message..."
 			maxlength="500"
-		/>
-		<button 
-			type="submit" 
-			class="send-button" 
-			disabled={!text.trim()}
-		>
-			Send
-		</button>
+			/>
+			<!-- on:keydown={handleKeyPress} -->
+		<button class="send-button" on:click={refreshListeners} > Debug </button>
+		<button type="submit" class="send-button" disabled={!text.trim()}> Send </button>
 	</form>
 </div>
 
@@ -297,6 +242,38 @@
 	.send-button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	.debug-button {
+		padding: 8px 12px;
+		cursor: pointer;
+		color: white;
+		border-radius: 20px;
+		background-color: #666;
+		border: none;
+		font-size: 14px;
+		margin-left: 8px;
+		transition: opacity 0.2s;
+	}
+
+	.debug-button:hover {
+		opacity: 0.8;
+	}
+
+	.clear-button {
+		padding: 8px 12px;
+		cursor: pointer;
+		color: white;
+		border-radius: 20px;
+		background-color: #dc3545;
+		border: none;
+		font-size: 14px;
+		margin-left: 8px;
+		transition: opacity 0.2s;
+	}
+
+	.clear-button:hover {
+		opacity: 0.8;
 	}
 
 	/* Dark mode styles */

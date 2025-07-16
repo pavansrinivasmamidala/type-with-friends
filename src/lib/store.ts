@@ -1,8 +1,11 @@
 // @ts-nocheck
 import { writable, type Writable } from 'svelte/store';
-import { browserStorage } from './browser-storage';
 import words from './words';
 
+// Import the new stores
+import { playerStore, gameStore, chatStore, connectionStore } from './stores';
+
+// Typing-related interfaces and stores (keeping these here as they're UI-specific)
 interface Letter {
 	text: string;
 	isWrong: boolean;
@@ -14,26 +17,6 @@ interface Word {
 	letters: Letter[];
 	isActive: boolean;
 }
-
-interface Player {
-	currentWordIndex?: number;
-	socketID?: string;
-	isPartyLeader?: boolean;
-	WPM?: number;
-	nickName?: string;
-	score?: string;
-}
-
-export const response: Writable<Record<string, any>> = writable({});
-export const nick: Writable<string> = writable('pavan');
-export const socketId: Writable<string> = writable('');
-// export const wordsArray = derived(response, ($response) => {
-//     if($response.content){
-//         console.log($response.content.split('').join(''));
-//         return $response.content.split('').join();
-//     }
-//     return [];
-// })
 
 export const letter: Letter = {
 	text: '',
@@ -66,75 +49,29 @@ words.map((word) => {
 	});
 });
 
-// console.log(wordsArray);
-// Create a writable store for the player with browser storage persistence
-const createPlayerStore = () => {
-	// Initialize with stored player data if available
-	const storedPlayer = browserStorage.getPlayer();
-	const { subscribe, set, update } = writable(storedPlayer || {});
+// Legacy socket ID store (keeping for backward compatibility)
+export const socketId: Writable<string> = writable('');
 
-	return {
-		subscribe,
-		set: (value: any) => {
-			set(value);
-			browserStorage.setPlayer(value);
-		},
-		update: (updater: (value: any) => any) => {
-			update((current) => {
-				const newValue = updater(current);
-				browserStorage.setPlayer(newValue);
-				return newValue;
-			});
-		},
-		clear: () => {
-			set({});
-			browserStorage.clearPlayer();
-		},
-		// Add method to update specific field
-		updateField: (field: string, value: any) => {
-			update((current) => {
-				const newValue = { ...current, [field]: value };
-				browserStorage.setPlayer(newValue);
-				return newValue;
-			});
-		}
-	};
-};
+// Legacy response store (keeping for backward compatibility)
+export const response: Writable<Record<string, any>> = writable({});
 
-export const player = createPlayerStore();
+// Legacy nick store (keeping for backward compatibility)
+export const nick: Writable<string> = writable('pavan');
 
-// Function to update player data
-function updatePlayer(data: Partial<Player>) {
-	player.update((current) => {
-		return { ...current, ...data };
-	});
-}
+// Re-export the new stores
+export { playerStore, gameStore, chatStore, connectionStore };
 
-// Example function to set player data
-export function setPlayerData() {
-	updatePlayer({
-		currentWordIndex: 1,
-		socketID: 'abc123',
-		isPartyLeader: true,
-		WPM: 50,
-		nickName: 'Player1',
-		score: '100'
-	});
-}
+// Legacy exports for backward compatibility
+export const player = playerStore;
+export const game = gameStore;
+export const messages = chatStore;
 
-export const game: Writable<Record<string, any>> = writable({});
-
-export const messages = writable([]);
-
-// Add a debug subscription to see if messages are being updated
+// Debug subscriptions (keeping for backward compatibility)
 if (typeof window !== 'undefined') {
-	messages.subscribe((msgs) => {
+	chatStore.subscribe((msgs) => {
 		console.log('Messages store updated:', msgs);
 	});
-}
 
-// Add debug subscription to track socket ID changes
-if (typeof window !== 'undefined') {
 	socketId.subscribe((id) => {
 		console.log('Socket ID store updated:', id);
 	});

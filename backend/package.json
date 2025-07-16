@@ -12,6 +12,7 @@
     "@types/node": "^24.0.10",
     "express": "^4.21.2",
     "mongoose": "^6.5.0",
+    "nanoid": "^5.1.5",
     "nodemon": "^2.0.22",
     "save-dev": "^0.0.1-security",
     "socket.io": "^4.5.1"

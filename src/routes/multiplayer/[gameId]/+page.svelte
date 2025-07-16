@@ -1,12 +1,12 @@
 <script>
 	// @ts-nocheck
 
-	import { io, waitForSocketConnection } from '$lib/realtime';
+	import { waitForSocketConnection } from '$lib/realtime';
 	import { onMount } from 'svelte';
 	import play from 'svelte-awesome/icons/play';
 	import { Icon } from 'svelte-awesome';
 	import link from '../../../lib/icons/link.png';
-	import { nick, game, player, socketId } from '../../../lib/store';
+	import { playerStore, gameStore, chatStore, nick, socketId } from '../../../lib/store';
 	import { onDestroy } from 'svelte';
 	import Chat from '$lib/chat/chat.svelte';
 	import Tracker from '$lib/tracker/tracker.svelte';
@@ -21,20 +21,16 @@
 	let startGame = false;
 	let tooltip = false;
 	let nickName = $nick;
-	let gameData = $game;
-	let playerData = $player;
+	let gameData = $gameStore;
+	let playerData = $playerStore;
 	let id = $socketId;
 
-	// nick.subscribe((value) => (nickName = value));
-	// game.subscribe((value) => (gameData = value));
-	// player.subscribe((value) => (playerData = value));
 	let tooltipText = 'Click to copy';
 	let isModalOpen = false;
 	let showNotificationMessage = false;
 	let notificationMessage = '';
 
-	// Create a reactive store for players
-	let players = [];
+	let players = []
 
 	function openModal() {
 		isModalOpen = true;
@@ -44,23 +40,20 @@
 		isModalOpen = false;
 	}
 
-	// Function to refresh players list
-	function refreshPlayers(gameId) {
-		if (gameId) {
-			io.emit('get-players', { gameId: gameId });
-		}
-	}
-
 	// Function to join game after player is created
 	function joinGame(gameId) {
-		console.log('Joining game with player ID:', $player.playerId);
-		io.emit('join-game', { gameId: gameId, playerId: $player.playerId });
+		console.log('Joining game with player ID:', $playerStore.playerId);
+		gameStore.joinGame(gameId, $playerStore.playerId);
+	}
 
-		io.on('joined-game', (data) => {
-			game.set(data);
-			console.log('joined game', gameData, data);
-			refreshPlayers(gameId);
-		});
+	function showNotification(message) {
+		notificationMessage = message;
+		showNotificationMessage = true;
+
+		// Auto-hide after 5 seconds
+		setTimeout(() => {
+			showNotificationMessage = false;
+		}, 5000);
 	}
 
 	onMount(async () => {
@@ -75,103 +68,46 @@
 			if (gameId) {
 				// Check if player exists in storage
 				const storedPlayer = browserStorage.getPlayer();
-				
+
 				if (storedPlayer && Object.keys(storedPlayer).length > 0) {
 					console.log('Using stored player:', storedPlayer);
-					
+
 					// Update socket ID if it's different
 					if (storedPlayer.socketId !== currentSocketId) {
-						console.log('Updating stored player socket ID from', storedPlayer.socketId, 'to', currentSocketId);
-						storedPlayer.socketId = currentSocketId;
-						browserStorage.setPlayer(storedPlayer);
-						
-						// Update socket ID in database
-						io.emit('update-socket-id', {
-							playerId: storedPlayer.playerId,
-							socketId: currentSocketId
-						});
+						console.log(
+							'Updating stored player socket ID from',
+							storedPlayer.socketId,
+							'to',
+							currentSocketId
+						);
+						playerStore.updateSocketId(storedPlayer.playerId);
 					}
-					
-					player.set(storedPlayer);
+
+					playerStore.set(storedPlayer);
 					nick.set(storedPlayer.nickName);
 					// Join game directly with existing player
 					joinGame(gameId);
 				} else {
 					console.log('No stored player, creating new player');
-					io.emit('new-player', {
-						partyLeader: false,
-						socketId: $socketId // Use the actual socket ID
-					});
-					
-					io.on('new-player', async (data) => {
-						player.set(data);
-						nick.set(data.nickName);
-						console.log('New player created:', data);
-						// Now join the game
-						joinGame(gameId);
-					});
+					playerStore.createPlayer(false);
 				}
-			} else {
-				// Handle new game creation (existing code)
-				const unsubscribe = player.subscribe((value) => {
-					if (value.playerId) {
-						io.emit('new-game', { playerId: value.playerId });
-						console.log(value);
-					}
-				});
-
-				io.on('connect_error', (error) => {
-					console.error('Socket connection error:', error);
-				});
-
-				io.on('game-created', (data) => {
-					game.set(data);
-					console.log('game created', gameData, data);
-					refreshPlayers(data._id);
-				});
 			}
 		});
 
-		// Listen for game-specific events
-		io.on('players', (data) => {
-			console.log('Players in this game:', data);
-			// Use reactive assignment to trigger UI updates
-			players = [...data];
-		});
-
-		io.on('player-joined', (data) => {
-			console.log('New player joined:', data.playerId);
-			// Refresh players list immediately
-			refreshPlayers(gameId);
-		});
-
-		io.on('player-left', (data) => {
-			console.log('Player left:', data.playerId, 'Reason:', data.reason);
-			
-			// Show notification for inactive players
-			if (data.reason === 'inactive') {
-				showNotification(`${data.playerNick || 'A player'} went inactive and was removed from the game`);
-			} else if (data.reason === 'disconnected') {
-				showNotification(`${data.playerNick || 'A player'} disconnected from the game`);
+		// Subscribe to game data changes
+		const unsubscribeGame = gameStore.subscribe((game) => {
+			if (game.players) {
+				// For now, we'll just store the player IDs
+				// You might want to fetch player details separately if needed
+				players = game.players;
 			}
-			
-			// Refresh players list immediately
-			refreshPlayers(gameId);
 		});
-
-		io.on('game-deleted', (data) => {
-			console.log('Game was deleted:', data.gameId);
-			// Redirect to home or show game ended message
-			goto('/');
-		});
-
-		// Message handling is done in the Chat component
 
 		// Handle browser tab closing
 		const handleBeforeUnload = () => {
-			if ($player.playerId && gameId) {
+			if ($playerStore.playerId && $gameStore.gameId) {
 				// Try to send leave-game event before tab closes
-				io.emit('leave-game', { gameId: gameId, playerId: $player.playerId });
+				gameStore.leaveGame($gameStore.gameId, $playerStore.playerId);
 			}
 		};
 
@@ -179,19 +115,11 @@
 
 		return () => {
 			unsubscribePage();
+			unsubscribeGame();
 			// Leave the game when component unmounts
-			if ($player.playerId && gameId) {
-				io.emit('leave-game', { gameId: gameId, playerId: $player.playerId });
+			if ($playerStore.playerId && $gameStore.gameId) {
+				gameStore.leaveGame($gameStore.gameId, $playerStore.playerId);
 			}
-			// Clean up all listeners
-			io.off('game-created');
-			io.off('players');
-			io.off('player-joined');
-			io.off('player-left');
-			io.off('game-deleted');
-			io.off('connect_error');
-			io.off('joined-game');
-			io.off('new-player');
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 		};
 	});
@@ -201,16 +129,6 @@
 		navigator.clipboard.writeText(gameUrl);
 		tooltipText = 'Copied!';
 	}
-
-	function showNotification(message) {
-		notificationMessage = message;
-		showNotificationMessage = true;
-		
-		// Auto-hide after 5 seconds
-		setTimeout(() => {
-			showNotificationMessage = false;
-		}, 5000);
-	}
 </script>
 
 <div class="container">
@@ -219,7 +137,7 @@
 	</Modal> -->
 
 	<ConnectionStatus />
-	
+
 	<!-- Notification -->
 	{#if showNotificationMessage}
 		<div class="notification">
@@ -229,7 +147,7 @@
 			</div>
 		</div>
 	{/if}
-	
+
 	{#if startGame}
 		<div>
 			<Tracker />
@@ -244,16 +162,21 @@
 				{startGame ? 'Menu' : 'Start Game'}</button
 			>
 		</div>
-	{:else}
-		<div class="game-info">
-			<div class="margin-bottom-30">
-				<span class="owner-name"> {$player.nickName}'s lobby</span>
-			</div>
-			<!-- <button 
-			on:click={() => socketFunction()}> click</button>  -->
-			<Chat />
-		</div>
+	{/if}
 
+	<!-- Chat component - always mounted but conditionally visible -->
+	<div class="game-info" class:hidden={startGame}>
+		{#if !startGame}
+			<div class="margin-bottom-30">
+				<span class="owner-name"> {$playerStore.nickName}'s lobby</span>
+			</div>
+		{/if}
+		<!-- <button 
+		on:click={() => socketFunction()}> click</button>  -->
+		<Chat />
+	</div>
+
+	{#if !startGame}
 		<div class="game-options">
 			<div class="margin-bottom-30 copy-div">
 				<div class="tooltip">
@@ -266,7 +189,7 @@
 
 				<button class="copy" on:click={() => copy()}>
 					<img src={link} height="20px" style="margin-right: 5px;" alt="copy-icon" />
-					<span class="url">Copy Link</span>
+					<span class="url">Copy Game Link</span>
 				</button>
 			</div>
 			<div class="player-info">
@@ -278,8 +201,8 @@
 					{:else}
 						{#each players as player}
 							<div class="player">
-								<p class="profile" />
 								<span class="player-name">{player.nickName}</span>
+								<p class="profile" />
 							</div>
 						{/each}
 					{/if}
@@ -332,7 +255,7 @@
 	.owner-name {
 		font-size: 26px;
 		font: bold;
-		color: var(--lightTextColor);
+		color: var(--darkBackground);
 		margin-bottom: 30px;
 	}
 
@@ -402,21 +325,22 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		gap: 10px;
 	}
 
 	.profile {
-		border: 2px solid var(--darkBackground);
+		border: 2px solid var(--lightTextColor);
 		border-radius: 100%;
 		height: 15px;
 		width: 15px;
 		margin-right: 6px;
-		background-color: var(--darkBackground);
+		background-color: var(--lightTextColor);
 	}
 
 	.player-name {
 		font-size: 22px;
 		font: bold;
-		color: var(--lightTextColor);
+		color: var(--darkBackground);
 	}
 
 	.btn {
@@ -433,6 +357,10 @@
 
 	.margin-bottom-30 {
 		margin-bottom: 30px;
+	}
+
+	.hidden {
+		display: none;
 	}
 
 	:global(body.dark-mode) .owner-name {
@@ -461,7 +389,7 @@
 		top: 20px;
 		right: 20px;
 		background: rgba(255, 193, 7, 0.95);
-		border: 1px solid #FF9800;
+		border: 1px solid #ff9800;
 		border-radius: 8px;
 		padding: 12px 16px;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -500,7 +428,7 @@
 	/* Dark mode notification */
 	:global(body.dark-mode) .notification {
 		background: rgba(255, 193, 7, 0.9);
-		border-color: #FFC107;
+		border-color: #ffc107;
 	}
 
 	:global(body.dark-mode) .notification-text {

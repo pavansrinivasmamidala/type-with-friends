@@ -44,14 +44,21 @@ setInterval(async () => {
 	const now = Date.now();
 	const inactivePlayers = [];
 
-	const activePlayerCount = Array.from(activePlayers.values()).filter(p => p.playerId).length;
-	console.log(`Ping check: ${activePlayers.size} total sockets, ${activePlayerCount} active players with IDs`);
+	const activePlayerCount = Array.from(activePlayers.values()).filter((p) => p.playerId).length;
+	const activePlayerIds = (await Player.find({ socketId: { $ne: '' } })).map((p) => p.playerId).length;
+	console.log(
+		`Ping check: ${activePlayers.size} total sockets, ${activePlayerIds} active players with IDs`
+	);
 
 	// Check for inactive players
 	for (const [socketId, playerData] of activePlayers.entries()) {
 		const timeSinceLastPing = now - playerData.lastPing;
 		if (timeSinceLastPing > PING_TIMEOUT) {
-			console.log(`Player ${playerData.playerId || 'Unknown'} inactive for ${timeSinceLastPing}ms, marking for removal`);
+			console.log(
+				`Player ${
+					playerData.playerId || 'Unknown'
+				} inactive for ${timeSinceLastPing}ms, marking for removal`
+			);
 			inactivePlayers.push({ socketId, playerData });
 		}
 	}
@@ -59,34 +66,34 @@ setInterval(async () => {
 	// Handle inactive players
 	for (const { socketId, playerData } of inactivePlayers) {
 		console.log('Player inactive, removing:', playerData.playerId || 'Unknown');
-		
+
 		// Remove from active players
 		activePlayers.delete(socketId);
-		
+
 		// Only process games if player has a valid playerId
 		if (!playerData.playerId) {
 			console.log('Skipping game removal for player without ID');
 			continue;
 		}
-		
+
 		// Find all games where this player is participating
 		const games = await Game.find({ playerIds: playerData.playerId });
-		
+
 		for (const game of games) {
 			console.log('Removing inactive player from game:', game.gameId);
-			
+
 			// Remove player from the game
-			game.playerIds = game.playerIds.filter(id => id !== playerData.playerId);
+			game.playerIds = game.playerIds.filter((id) => id !== playerData.playerId);
 			await game.save();
-			
+
 			// Emit to all other players in the game room
-			io.to(game.gameId).emit('player-left', { 
-				playerId: playerData.playerId, 
+			io.to(game.gameId).emit('player-left', {
+				playerId: playerData.playerId,
 				gameId: game.gameId,
 				reason: 'inactive',
 				playerNick: 'Unknown Player'
 			});
-			
+
 			// If no players left, delete the game
 			if (game.playerIds.length === 0) {
 				await Game.deleteOne({ gameId: game.gameId });
@@ -94,7 +101,7 @@ setInterval(async () => {
 				io.to(game.gameId).emit('game-deleted', { gameId: game.gameId });
 			}
 		}
-		
+
 		// Clear the socket ID from the player record
 		await Player.findOneAndUpdate(
 			{ playerId: playerData.playerId },
@@ -106,7 +113,7 @@ setInterval(async () => {
 
 io.on('connection', (socket: Socket) => {
 	console.log('connected to a user', socket.id);
-	
+
 	// Add socket to active players immediately upon connection
 	// We'll update the playerId later when we get it
 	activePlayers.set(socket.id, { socketId: socket.id, lastPing: Date.now(), playerId: '' });
@@ -130,17 +137,13 @@ io.on('connection', (socket: Socket) => {
 
 	socket.on('update-socket-id', async (data: any) => {
 		console.log('updating socket ID for player:', data);
-		
+
 		try {
 			const { playerId, socketId } = data;
-			
+
 			// Update the player's socket ID in the database
-			await Player.findOneAndUpdate(
-				{ playerId: playerId },
-				{ socketId: socketId },
-				{ new: true }
-			);
-			
+			await Player.findOneAndUpdate({ playerId: playerId }, { socketId: socketId }, { new: true });
+
 			// Update existing active player entry with playerId
 			const existingPlayer = activePlayers.get(socketId);
 			if (existingPlayer) {
@@ -152,9 +155,8 @@ io.on('connection', (socket: Socket) => {
 				activePlayers.set(socketId, { socketId, lastPing: Date.now(), playerId });
 				console.log('Created new active player entry:', playerId, 'Socket:', socketId);
 			}
-			
+
 			console.log('Updated socket ID for player:', playerId, 'to:', socketId);
-			
 		} catch (error) {
 			console.error('Error updating socket ID:', error);
 		}
@@ -177,13 +179,13 @@ io.on('connection', (socket: Socket) => {
 
 	socket.on('join-game', async (data: any) => {
 		console.log('player joining game:', data);
-		
+
 		try {
 			const { gameId, playerId } = data;
-			
+
 			// Find the game by gameId
 			const game = await Game.findOne({ gameId: gameId });
-			
+
 			if (!game) {
 				console.error('Game not found:', gameId);
 				socket.emit('join-game-error', { message: 'Game not found' });
@@ -199,13 +201,13 @@ io.on('connection', (socket: Socket) => {
 
 			// Add player to the game
 			game.playerIds.push(playerId);
-			
+
 			// Save the updated game
 			await game.save();
-			
+
 			// Join the socket room for this game
 			socket.join(gameId);
-			
+
 			// Update active player entry with playerId if not already set
 			const existingPlayer = activePlayers.get(socket.id);
 			if (existingPlayer && !existingPlayer.playerId) {
@@ -213,15 +215,14 @@ io.on('connection', (socket: Socket) => {
 				existingPlayer.lastPing = Date.now();
 				console.log('Updated active player in join-game:', playerId, 'Socket:', socket.id);
 			}
-			
+
 			console.log('Player joined game:', gameId, 'Player:', playerId);
-			
+
 			// Emit to the joining player
 			socket.emit('joined-game', game);
-			
+
 			// Emit to all other players in the game room (excluding the joining player)
 			socket.to(gameId).emit('player-joined', { playerId, gameId });
-			
 		} catch (error) {
 			console.error('Error joining game:', error);
 			socket.emit('join-game-error', { message: 'Failed to join game' });
@@ -230,42 +231,41 @@ io.on('connection', (socket: Socket) => {
 
 	socket.on('leave-game', async (data: any) => {
 		console.log('player leaving game:', data);
-		
+
 		try {
 			const { gameId, playerId } = data;
-			
+
 			// Find the game by gameId
 			const game = await Game.findOne({ gameId: gameId });
-			
+
 			if (!game) {
 				console.error('Game not found:', gameId);
 				return;
 			}
 
 			// Remove player from the game
-			game.playerIds = game.playerIds.filter(id => id !== playerId);
-			
+			game.playerIds = game.playerIds.filter((id) => id !== playerId);
+
 			// Save the updated game
 			await game.save();
-			
+
 			// Leave the socket room
 			socket.leave(gameId);
-			
+
 			// Remove from active players
 			activePlayers.delete(socket.id);
-			
+
 			console.log('Player left game:', gameId, 'Player:', playerId);
-			
+
 			// Emit to all other players in the game room
 			socket.to(gameId).emit('player-left', { playerId, gameId });
-			
+
 			// If no players left, delete the game
 			if (game.playerIds.length === 0) {
 				await Game.deleteOne({ gameId: gameId });
 				console.log('Game deleted (no players left):', gameId);
 				io.to(gameId).emit('game-deleted', { gameId });
 			}
-			
 		} catch (error) {
 			console.error('Error leaving game:', error);
 		}
@@ -276,22 +276,27 @@ io.on('connection', (socket: Socket) => {
 		const playerData = activePlayers.get(socket.id);
 		if (playerData) {
 			playerData.lastPing = Date.now();
-			
+
 			// Update playerId if provided and not already set
 			if (data.playerId && !playerData.playerId) {
 				playerData.playerId = data.playerId;
 				console.log('Updated playerId from ping:', data.playerId, 'Socket:', socket.id);
 			}
-			
+
 			socket.emit('pong');
-			console.log('Ping received from player:', playerData.playerId || 'Unknown', 'Socket:', socket.id);
+			// console.log(
+			// 	'Ping received from player:',
+			// 	playerData.playerId || 'Unknown',
+			// 	'Socket:',
+			// 	socket.id
+			// );
 		} else {
 			console.log('Ping received from unknown socket:', socket.id);
 		}
 	});
 
 	socket.on('send-message', async (data: any) => {
-		console.log('message event is emitted');
+		console.log('received message event');
 		console.log(data);
 
 		try {
@@ -313,9 +318,9 @@ io.on('connection', (socket: Socket) => {
 			if (result) {
 				console.log('updated game ', result);
 				const latestMessage = result.chat[result.chat.length - 1];
-				
+
 				// Emit the message to ALL players in the game room (including sender)
-				io.in(data.gameId).emit('get-messages', {
+				io.to(data.gameId).emit('get-messages', {
 					playerId: latestMessage.playerId,
 					playerNick: latestMessage.playerNick,
 					message: latestMessage.message,
@@ -346,6 +351,29 @@ io.on('connection', (socket: Socket) => {
 		}
 	});
 
+	Game.watch([{ $match: { 'updateDescription.updatedFields.playerIds': { $exists: true } } }]).on(
+		'change',
+		async (change) => {
+			try {
+				const gameId = change._id;
+				const updatedGame = await Game.findById(gameId);
+
+				if (updatedGame) {
+					// Fetch updated players data
+					const players = await Player.find({ playerId: { $in: updatedGame.playerIds } });
+					console.log('Updated players in the game:', players);
+
+					// Emit updated players data to all players in the game room
+					io.to(updatedGame.gameId).emit('players', players);
+				} else {
+					console.error('Game not found for emitting updated players:', gameId);
+				}
+			} catch (error) {
+				console.error('Error emitting updated players:', error);
+			}
+		}
+	);
+
 	async function updatePlayerSocketId(playerId: string, newSocketId: string) {
 		try {
 			await Player.findOneAndUpdate(
@@ -363,44 +391,49 @@ io.on('connection', (socket: Socket) => {
 
 	socket.on('disconnect', async () => {
 		console.log('user disconnected - socket ID:', socket.id);
-		
+
 		// Remove from active players
 		activePlayers.delete(socket.id);
-		
+
 		try {
 			// Find the player by socketId first
 			const player = await Player.findOne({ socketId: socket.id });
-			
+
 			if (!player) {
 				console.log('No player found for disconnected socket:', socket.id);
 				return;
 			}
 
 			console.log('Player disconnecting:', player.nickName, 'Player ID:', player.playerId);
-			
+
 			// Find all games where this player is participating
 			const games = await Game.find({ playerIds: player.playerId });
-			
+
 			for (const game of games) {
 				console.log('Removing player from game:', game.gameId);
-				
+
 				// Remove player from the game
-				game.playerIds = game.playerIds.filter(id => id !== player.playerId);
+				game.playerIds = game.playerIds.filter((id) => id !== player.playerId);
 				await game.save();
-				
+
 				// Leave the socket room
 				socket.leave(game.gameId);
-				
-				console.log('Player removed from game on disconnect:', player.playerId, 'Game:', game.gameId);
-				
+
+				console.log(
+					'Player removed from game on disconnect:',
+					player.playerId,
+					'Game:',
+					game.gameId
+				);
+
 				// Emit to all other players in the game room
-				socket.to(game.gameId).emit('player-left', { 
-					playerId: player.playerId, 
+				socket.to(game.gameId).emit('player-left', {
+					playerId: player.playerId,
 					gameId: game.gameId,
 					reason: 'disconnected',
 					playerNick: player.nickName
 				});
-				
+
 				// If no players left, delete the game
 				if (game.playerIds.length === 0) {
 					await Game.deleteOne({ gameId: game.gameId });
@@ -408,10 +441,9 @@ io.on('connection', (socket: Socket) => {
 					io.to(game.gameId).emit('game-deleted', { gameId: game.gameId });
 				}
 			}
-			
+
 			// Clear the socket ID from the player record
 			await updatePlayerSocketId(player.playerId, '');
-			
 		} catch (error) {
 			console.error('Error handling disconnect:', error);
 		}

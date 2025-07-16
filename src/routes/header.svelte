@@ -3,26 +3,45 @@
 
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { playerStore, gameStore } from '$lib/store';
 
 	let routeId;
 	page.subscribe((page) => {
 		routeId = page.route.id; // get the route parameter 'id'
 	});
+
+	function hanldeRouting() {
+		if (routeId?.startsWith('/multiplayer')) {
+			goto('/solo');
+		} else {
+			// Create a new game using the abstracted method
+			gameStore.createGame($playerStore.playerId);
+
+			// Listen for game creation response
+			import('$lib/realtime').then(({ io }) => {
+				io.on('game-created', (data) => {
+					console.log('Game created:', data);
+					// Redirect to the new game
+					goto(`/multiplayer/${data.gameId}`);
+				});
+			});
+		}
+	}
 </script>
 
-<div class="container" style={routeId === '/' ? 'justify-content: center;' : 'justify-content: space-between;'}>
+<div
+	class="container"
+	style={routeId === '/' ? 'justify-content: center;' : 'justify-content: space-between;'}
+>
 	<div style="display: flex; flex-direction:column;">
 		<a class="heading" href="/"> Type with Friends </a>
 		<span class="subheading">or anyone</span>
 	</div>
 	{#if routeId !== '/'}
 		<div>
-				<button class="btn" tabindex="-1" on:click={() => {
-					goto(routeId?.startsWith('/multiplayer') ? '/solo' : '/multiplayer');
-				}}>
-					{routeId?.startsWith('/multiplayer') ? 'Single Player' : 'Multiplayer'}
-				</button>
-
+			<button class="btn" tabindex="-1" on:click={hanldeRouting}>
+				{routeId?.startsWith('/multiplayer') ? 'Single Player' : 'Multiplayer'}
+			</button>
 		</div>
 	{/if}
 </div>

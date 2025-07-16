@@ -5,11 +5,9 @@
 	import user from 'svelte-awesome/icons/user';
 	import users from 'svelte-awesome/icons/users';
 	import arrowRight from 'svelte-awesome/icons/arrowRight';
-	import { nick, player } from '../lib/store';
+	import { playerStore, gameStore, nick, socketId } from '../lib/store';
 	import { onDestroy } from 'svelte';
-	import { io, waitForSocketConnection } from '$lib/realtime';
-	import { socketId } from '$lib/store';
-	import { redirect } from '@sveltejs/kit';
+	import { waitForSocketConnection } from '$lib/realtime';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { browserStorage } from '$lib/browser-storage';
@@ -30,54 +28,54 @@
 			// Update socket ID if it's different
 			if (storedPlayer.socketId !== currentSocketId) {
 				console.log('Updating stored player socket ID from', storedPlayer.socketId, 'to', currentSocketId);
-				storedPlayer.socketId = currentSocketId;
-				browserStorage.setPlayer(storedPlayer);
-				
-				// Update socket ID in database
-				io.emit('update-socket-id', {
-					playerId: storedPlayer.playerId,
-					socketId: currentSocketId
-				});
+				await playerStore.updateSocketId(storedPlayer.playerId);
 			}
 			
 			// Update stores with stored data
-			player.set(storedPlayer);
+			playerStore.set(storedPlayer);
 			nick.set(storedPlayer.nickName);
 		} else {
 			console.log('No stored player found, creating new player');
 			// Create new player only if none exists
-			io.emit('new-player', {
-				partyLeader: true,
-				socketId: $socketId // Use the actual socket ID
-			});
-			io.on('new-player', async (data) => {
-				player.set(data); // This will automatically save to storage
-				nick.set(data.nickName);
-				console.log('New player created and stored:', data);
-			});
+			await playerStore.createPlayer(true);
 		}
 	});
 
 	// Function to handle multiplayer click
 	function handleMultiplayerClick() {
-		// Create a new game
-		io.emit('new-game', { playerId: $player.playerId });
+		// Create a new game using the abstracted method
+		gameStore.createGame($playerStore.playerId);
 		
-		// Listen for game creation response
-		io.on('game-created', (data) => {
+		// Listen for game creation response (one-time listener)
+		const gameCreatedHandler = (data) => {
 			console.log('Game created:', data);
+			// Remove the listener immediately after use
+			gameStore.cleanup();
 			// Redirect to the new game
 			goto(`/multiplayer/${data.gameId}`);
+		};
+		
+		// We need to temporarily add a listener for this specific case
+		// This could be improved by adding a callback system to the store
+		import('$lib/realtime').then(({ io }) => {
+			io.on('game-created', gameCreatedHandler);
 		});
 	}
 
-	// onDestroy(unsub);
+	onDestroy(() => {
+		console.log('Home page destroying, cleaning up listeners');
+		// Clean up any listeners that might have been added
+		import('$lib/realtime').then(({ io }) => {
+			io.off('new-player');
+			io.off('game-created');
+		});
+	});
 </script>
 
 <div class="container">
 	<div class="nick-div">
 		<span class="nick-title">Welcome to the game!</span>
-		<span class="nick-name">{$player.nickName}</span>
+		<span class="nick-name">{$playerStore.nickName}</span>
 		<!-- svelte-ignore a11y-autofocus -->
 		<!-- <input type="text" autofocus bind:value={$nick} class="nick-input" placeholder="Enter name" /> -->
 	</div>
